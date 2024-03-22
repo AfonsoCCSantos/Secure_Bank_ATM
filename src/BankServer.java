@@ -4,6 +4,8 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 import bank.BankThread;
@@ -13,25 +15,31 @@ public class BankServer {
 	private static final int DEFAULT_BANK_PORT = 3000;
 	private static final int RETURN_VALUE_INVALID = 255;  
 	private static final String DEFAULT_AUTH_FILE = "bank.auth";
+	private static Map<String, Double> accounts;
 	
 	public static void main(String[] args) {
 		addSigtermHook();
+		accounts = new HashMap<String, Double>();
 		Scanner sc = new Scanner(System.in);
 		
 		//Default parameters
 		int port = DEFAULT_BANK_PORT;
 		String authFileName = DEFAULT_AUTH_FILE;
 		
-		if (args.length % 2 == 1) {
-			System.err.println("Erro");
+		if (args.length >= 4096) {
 			System.exit(RETURN_VALUE_INVALID);			
 		}
 		
-		authFileName = getArgs(args, authFileName);
+		//for (int i = 0; i < args.length; i++) {
+			//if (args[i].substring(0,2).equals("-s") || args[i].substring(0,2).equals("-p")) {
+				
+			//}
+		//}
+		
+		getArgs(args, authFileName, port);
 		
 		Path path = Paths.get(authFileName);
 		if (Files.exists(path)) {
-			System.err.println("Auth file already exists.");
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
@@ -75,8 +83,7 @@ public class BankServer {
 		System.out.println("Creating...");
 	}
 
-	private static String getArgs(String[] args, String authFileName) {
-		int port;
+	private static void getArgs(String[] args, String authFileName, int port) {
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-s") && i + 1 < args.length) {
 				authFileName = args[i+1];
@@ -87,16 +94,13 @@ public class BankServer {
                     port = Integer.parseInt(args[i + 1]);
                     i++;
                 } catch (NumberFormatException e) {
-                    System.err.println("Invalid number format for -p flag: " + args[i + 1]);
-                    System.exit(255);
+                    System.exit(RETURN_VALUE_INVALID);
                 }
 			}
 			else {
-				System.err.println("Erro");
 				System.exit(RETURN_VALUE_INVALID);
 			}
 		}
-		return authFileName;
 	}
 
 }

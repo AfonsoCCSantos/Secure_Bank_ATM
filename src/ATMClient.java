@@ -1,4 +1,7 @@
 import java.net.Socket;
+
+import atm.AtmStub;
+
 import java.io.IOException;
 
 public class ATMClient {
@@ -21,7 +24,38 @@ public class ATMClient {
 		String functionality = null;
 		double amount = 0.0;
 		
+		processArgs(args, authFile, bankIP, bankPort, cardFile, account, functionality, amount);
 		
+		Socket bankSocket = connectToServerSocket(bankIP, bankPort);
+		AtmStub atmStub = new AtmStub(bankSocket);
+				
+		switch(functionality) {
+				case "CREATE_ACCOUNT":
+					int result = atmStub.createAccount(account, amount, cardFile);
+					System.exit(result);
+				case "DEPOSIT":
+					break;
+				case "WITHDRAW":
+					break;	
+				case "GET_BALANCE":
+					break;
+		}
+			
+	}
+	
+	
+	private static Socket connectToServerSocket(String bankIP, int bankPort) {
+		Socket socket = null;
+		try {
+			socket = new Socket(bankIP, bankPort);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return socket;
+	}
+	
+	private static void processArgs(String[] args, String authFile, String bankIP, int bankPort, 
+							String cardFile, String account, String functionality, double amount) {
 		int i = 0; 
 		while (i < args.length) {
 			if(args[i].equals("-s") && i+1 < args.length) {
@@ -55,8 +89,14 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				} 
 				functionality = "CREATE_ACCOUNT";
-				amount = Double.valueOf(args[i+1]);
-				i++;
+				try {
+					amount = Double.valueOf(args[i+1]);
+					i++;					
+				} catch(NumberFormatException e) {
+					System.err.println("The balance given must be a number!");
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				
 			}
 			else if(args[i].equals("-d") && i+1 < args.length) {
 				if(functionality != null) {
@@ -64,8 +104,14 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				} 
 				functionality = "DEPOSIT";
-				amount = Double.valueOf(args[i+1]);
-				i++;
+				try {
+					amount = Double.valueOf(args[i+1]);
+					i++;				
+				} catch(NumberFormatException e) {
+					System.err.println("The amount given must be a number!");
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				
 			}
 			else if(args[i].equals("-w") && i+1 < args.length) {
 				if(functionality != null) {
@@ -73,8 +119,13 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				} 
 				functionality = "WITHDRAW";
-				amount = Double.valueOf(args[i+1]);
-				i++;
+				try {
+					amount = Double.valueOf(args[i+1]);
+					i++;				
+				} catch(NumberFormatException e) {
+					System.err.println("The amount given must be a number!");
+					System.exit(RETURN_VALUE_INVALID);
+				}
 			}
 			else if(args[i].equals("-g")) {
 				if(functionality != null) {
@@ -94,34 +145,7 @@ public class ATMClient {
 		if(functionality == null) {
 			System.err.println("One mode of operation must be given!");
 			System.exit(RETURN_VALUE_INVALID);
-		} 
-		
-		Socket bankSocket = connectToServerSocket(bankIP, bankPort);
-		
-		
-		
-		switch(functionality) {
-				case "CREATE_ACCOUNT":
-					break;
-				case "DEPOSIT":
-					break;
-				case "WITHDRAW":
-					break;	
-				case "GET_BALANCE":
-					break;
 		}
-			
-	}
-	
-	
-	private static Socket connectToServerSocket(String bankIP, int bankPort) {
-		Socket socket = null;
-		try {
-			socket = new Socket(bankIP, bankPort);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return socket;
 	}
 
 	

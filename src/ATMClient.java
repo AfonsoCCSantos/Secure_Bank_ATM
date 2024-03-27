@@ -37,8 +37,11 @@ public class ATMClient {
 					result = atmStub.depositAmount(account, amount, cardFile);
 					System.exit(result);
 				case "WITHDRAW":
-					break;	
+					result = atmStub.withdrawAmount(account, amount, cardFile);
+					System.exit(result);
 				case "GET_BALANCE":
+					result = atmStub.getBalance(account, cardFile);
+					System.exit(result);
 					break;
 		}
 			

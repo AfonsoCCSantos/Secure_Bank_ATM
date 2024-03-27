@@ -33,17 +33,14 @@ public class AtmStub {
 			return RETURN_VALUE_INVALID;
 		}
 		
-		//verify if balanca >= 10
 		if (balance < BALANCE_INFERIOR_LIMIT) {
 			return RETURN_VALUE_INVALID;
 		} 
 		
-		//verify if account doesnt exist
 		try {
 			outToServer.writeObject("CREATE_ACCOUNT");
 			outToServer.writeObject(account);
-			outToServer.writeObject(balance);
-			//receive result from bank
+			outToServer.writeObject(Double.toString(balance));
 			
 			String createAccountResult = (String) inFromServer.readObject();
 			if(createAccountResult.equals("ACCOUNT_ALREADY_EXISTS")) return RETURN_VALUE_INVALID;
@@ -52,7 +49,6 @@ public class AtmStub {
 			e.printStackTrace();
 		}
 		
-		//print balance
 		System.out.println("{\"account\":\"" + account + "\",\"initial_balance\":" + balance + "}\n"); 
 		
 		//create card file
@@ -69,9 +65,9 @@ public class AtmStub {
 		//verify if account exists and deposit amount
 		//verify cardFile is associated to account
 		try {
-			outToServer.writeObject("DEPOSIT_AMOUNT");
+			outToServer.writeObject("DEPOSIT");
 			outToServer.writeObject(account);
-			outToServer.writeObject(amount);
+			outToServer.writeObject(Double.toString(amount));
 			
 			//receive result from bank
 			String depositResult = (String) inFromServer.readObject();

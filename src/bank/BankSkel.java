@@ -23,9 +23,23 @@ public class BankSkel {
 		synchronized (accounts) {
 			accounts.put(accountName, balance);
 		}
-		//PRINT THE JSON
+
+		System.out.println("{\"account\":\"" + accountName + "\",\"initial_balance\":" + balance + "}\n"); 
 		return 0;
 	}
+
+	public int deposit(String accountName, double amount) {
+		if (accounts.get(accountName) == null) return -3;
+		
+		synchronized (accounts) {
+			accounts.put(accountName, accounts.get(accountName) + amount);
+		}
+
+		System.out.println("{\"account\":\"" + accountName + "\",\"deposit\":" + amount + "}\n"); 
+		return 0;
+	}
+
+
 	
 	
 	

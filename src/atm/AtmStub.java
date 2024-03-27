@@ -59,6 +59,31 @@ public class AtmStub {
 		createCardFile(cardFileName);
 		return 0;
 	}
+
+	public int depositAmount(String account, double amount, String cardFileName) {
+		//verify if amount > 0
+		if (amount <= 0) {
+			return RETURN_VALUE_INVALID;
+		} 
+
+		//verify if account exists and deposit amount
+		//verify cardFile is associated to account
+		try {
+			outToServer.writeObject("DEPOSIT_AMOUNT");
+			outToServer.writeObject(account);
+			outToServer.writeObject(amount);
+			
+			//receive result from bank
+			String depositResult = (String) inFromServer.readObject();
+			if(depositResult.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
+		} catch(IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		//print account and amount
+		System.out.println("{\"account\":\"" + account + "\",\"initial_balance\":" + amount + "}\n"); 
+		return 0;
+	}
 	
 	private static void createCardFile(String cardFileName) {
 		System.out.println("Creating...");

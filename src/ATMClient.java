@@ -34,7 +34,8 @@ public class ATMClient {
 					int result = atmStub.createAccount(account, amount, cardFile);
 					System.exit(result);
 				case "DEPOSIT":
-					break;
+					result = atmStub.depositAmount(account, amount, cardFile);
+					System.exit(result);
 				case "WITHDRAW":
 					break;	
 				case "GET_BALANCE":

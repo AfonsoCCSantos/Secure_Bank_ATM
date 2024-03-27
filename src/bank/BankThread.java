@@ -13,6 +13,7 @@ public class BankThread extends Thread {
 	private static final int SUCCESS = 0;
 	private static final int ACCOUNT_ALREADY_EXISTS = -2;
 	private static final int ACCOUNT_DOESNT_EXIST = -3;
+	private static final int NEGATIVE_BALANCE = -4;
 	private static final int RETURN_VALUE_INVALID = 255;  
 	private Socket socket;
 	private Map<String, Double> accounts;
@@ -67,7 +68,24 @@ public class BankThread extends Thread {
 						}
 						break;
 					case "WITHDRAW":
-						//withdraw
+						accountName = (String) in.readObject();
+						amountString = (String) in.readObject();
+						amount = 0.0;
+						try {
+							amount = Double.parseDouble(amountString);
+						} catch (NumberFormatException e) {
+							System.exit(RETURN_VALUE_INVALID);
+						}
+						returnCode = bankSkel.withdraw(accountName, amount);
+						if (returnCode == ACCOUNT_DOESNT_EXIST) {
+							out.writeObject("ACCOUNT_DOESNT_EXIST");
+						}
+						else if(returnCode == NEGATIVE_BALANCE) {
+							out.writeObject("NEGATIVE_BALANCE");
+						}
+						else if (returnCode == SUCCESS) {
+							out.writeObject("SUCCESS");
+						}
 						break;
 					case "GET_BALANCE":
 						//get balance

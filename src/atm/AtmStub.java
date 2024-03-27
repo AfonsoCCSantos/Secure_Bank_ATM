@@ -57,44 +57,39 @@ public class AtmStub {
 	}
 
 	public int depositAmount(String account, double amount, String cardFileName) {
-		//verify if amount > 0
 		if (amount <= 0) {
 			return RETURN_VALUE_INVALID;
 		} 
 
-		//verify if account exists and deposit amount
 		//verify cardFile is associated to account
+
 		try {
 			outToServer.writeObject("DEPOSIT");
 			outToServer.writeObject(account);
 			outToServer.writeObject(Double.toString(amount));
 			
-			//receive result from bank
 			String depositResult = (String) inFromServer.readObject();
 			if(depositResult.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 
-		//print account and amount
 		System.out.println("{\"account\":\"" + account + "\",\"deposit\":" + amount + "}\n"); 
 		return 0;
 	}
 
 	public int withdrawAmount(String account, double amount, String cardFileName) {
-		//verify if amount > 0
 		if (amount <= 0) {
 			return RETURN_VALUE_INVALID;
-		} 
-
-		//verify if account exists and withdraw amount
+		}
+		
 		//verify cardFile is associated to account
+
 		try {
-			outToServer.writeObject("WITHDRAW_AMOUNT");
+			outToServer.writeObject("WITHDRAW");
 			outToServer.writeObject(account);
 			outToServer.writeObject(amount);
 			
-			//receive result from bank
 			String withdrawResult = (String) inFromServer.readObject();
 			if(withdrawResult.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
 			if(withdrawResult.equals("NEGATIVE_BALANCE")) return RETURN_VALUE_INVALID;
@@ -102,7 +97,6 @@ public class AtmStub {
 			e.printStackTrace();
 		}
 
-		//print account and amount
 		System.out.println("{\"account\":\"" + account + "\",\"withdraw\":" + amount + "}\n"); 
 		return 0;
 	}

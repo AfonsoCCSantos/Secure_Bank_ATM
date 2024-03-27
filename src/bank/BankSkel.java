@@ -39,6 +39,19 @@ public class BankSkel {
 		return 0;
 	}
 
+	public int withdraw(String accountName, double amount) {
+		if (accounts.get(accountName) == null) return -3;
+		
+		synchronized (accounts) {
+			Double remainingAmount = accounts.get(accountName) - amount;
+			if(remainingAmount < 0) return -4; 
+			accounts.put(accountName, remainingAmount);
+		}
+
+		System.out.println("{\"account\":\"" + accountName + "\",\"withdraw\":" + amount + "}\n"); 
+		return 0;
+	}
+
 
 	
 	

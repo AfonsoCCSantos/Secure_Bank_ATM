@@ -28,10 +28,10 @@ public class AtmStub {
 	public int createAccount(String account, double balance, String cardFileName) {
 		
 		//verify if card file is unique
-		Path path = Paths.get(cardFileName);
-		if (Files.exists(path)) {
-			return RETURN_VALUE_INVALID;
-		}
+//		Path path = Paths.get(cardFileName);
+//		if (Files.exists(path)) {
+//			return RETURN_VALUE_INVALID;
+//		}
 		
 		if (balance < BALANCE_INFERIOR_LIMIT) {
 			return RETURN_VALUE_INVALID;

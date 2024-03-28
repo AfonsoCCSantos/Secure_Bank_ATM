@@ -20,13 +20,15 @@ public class BankServer {
 	private static Map<String, Double> accounts;
 	
 	public static void main(String[] args) {
-		addSigtermHook();
+		ServerSocket serverSocket = null;
+		addSigtermHook(serverSocket);
 		accounts = new HashMap<String, Double>();
 		Scanner sc = new Scanner(System.in);
+		Map<String, String> finalArgs = new HashMap<String, String>();
 		
 		//Default parameters
-		int port = DEFAULT_BANK_PORT;
-		String authFileName = DEFAULT_AUTH_FILE;
+		finalArgs.put("port", String.valueOf(DEFAULT_BANK_PORT));
+		finalArgs.put("authFileName", DEFAULT_AUTH_FILE);
 		
 		if (args.length >= 4096) {
 			System.exit(RETURN_VALUE_INVALID);			
@@ -50,17 +52,17 @@ public class BankServer {
             }
 		}
 		
-		getArgs(args, authFileName, port);
+		getArgs(args, finalArgs);
 		
-		Path path = Paths.get(authFileName);
+		Path path = Paths.get(finalArgs.get("authFileName"));
 		if (Files.exists(path)) {
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
-		createAuthFile(authFileName);
+		createAuthFile(finalArgs.get("authFileName"));
 		System.out.println("Auth file created");
 		
-		ServerSocket serverSocket = initialiseSocket(port);
+		serverSocket = initialiseSocket(Integer.parseInt(finalArgs.get("port")));
 		
 		while (true) {
 			Socket inSocket;
@@ -75,9 +77,14 @@ public class BankServer {
 
 	}
 
-	private static void addSigtermHook() {
+	private static void addSigtermHook(ServerSocket serverSocket) {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Received SIGTERM, shutting down...");
+            try {
+				serverSocket.close();
+			} catch (IOException e) {
+				System.exit(0);
+			}
             // Perform cleanup tasks or any necessary actions before exiting
             System.exit(0);
         }));
@@ -97,15 +104,15 @@ public class BankServer {
 		System.out.println("Creating...");
 	}
 
-	private static void getArgs(String[] args, String authFileName, int port) {
+	private static void getArgs(String[] args, Map<String, String> finalArgs) {
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-s") && i + 1 < args.length) {
-				authFileName = args[i+1];
+				finalArgs.put("authFileName", args[i+1]);
 				i++;
 			}
 			else if (args[i].equals("-p") && i + 1 < args.length) {
 				try {
-                    port = Integer.parseInt(args[i + 1]);
+                    finalArgs.put("port", args[i + 1]);
                     i++;
                 } catch (NumberFormatException e) {
                     System.exit(RETURN_VALUE_INVALID);

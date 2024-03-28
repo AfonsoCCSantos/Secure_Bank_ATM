@@ -97,8 +97,8 @@ public class BankThread extends Thread {
 						out.writeObject(currentBalance);
 						break;
 				}
-			} catch (ClassNotFoundException | IOException e) {
-				e.printStackTrace();
+			} catch (Exception e) {
+				return;
 			}
 		}
 	}

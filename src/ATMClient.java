@@ -1,4 +1,7 @@
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.HashMap;
 
 import atm.AtmStub;
 
@@ -10,40 +13,68 @@ public class ATMClient {
 	
 	public static void main(String[] args) {
 		
+		Map<String, String> finalArgs = new HashMap<>();
+		
 		if (args.length < 2) {
 			System.err.println("Not enough arguments were presented.");
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
-		String bankIP = "127.0.0.1";
+		finalArgs.put("BankIP", "127.0.0.1");
+		finalArgs.put("BankPort", "3000");
+		finalArgs.put("AuthFile", "bank.auth");
+		finalArgs.put("CardFile", null);
+		finalArgs.put("Account", null);
+		finalArgs.put("Functionality", null);
+		finalArgs.put("Amount", null);
+		
+		finalArgs = processArgs(args, finalArgs);
+		
 		int bankPort = 3000;
-		String authFile = "bank.auth";
-		String cardFile = null;
-		String account = null;
+		try {
+			bankPort = Integer.parseInt(finalArgs.get("BankPort"));
+		} catch (NumberFormatException e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
 		
-		String functionality = null;
-		double amount = 0.0;
-		
-		processArgs(args, authFile, bankIP, bankPort, cardFile, account, functionality, amount);
-		
-		Socket bankSocket = connectToServerSocket(bankIP, bankPort);
+		Socket bankSocket = connectToServerSocket(finalArgs.get("BankIP"), bankPort);
 		AtmStub atmStub = new AtmStub(bankSocket);
-				
-		switch(functionality) {
+		
+		double amount = 0.0;
+		int result = 0;
+		switch(finalArgs.get("Functionality")) {
 				case "CREATE_ACCOUNT":
-					int result = atmStub.createAccount(account, amount, cardFile);
-					System.exit(result);
+					amount = getAmountInDouble(finalArgs);
+					result = atmStub.createAccount(finalArgs.get("Account"), amount, finalArgs.get("CardFile"));
+					break;
 				case "DEPOSIT":
-					result = atmStub.depositAmount(account, amount, cardFile);
-					System.exit(result);
+					amount = getAmountInDouble(finalArgs);
+					result = atmStub.depositAmount(finalArgs.get("Account"), amount, finalArgs.get("CardFile"));
+					break;
 				case "WITHDRAW":
-					result = atmStub.withdrawAmount(account, amount, cardFile);
-					System.exit(result);
+					amount = getAmountInDouble(finalArgs);
+					result = atmStub.withdrawAmount(finalArgs.get("Account"), amount, finalArgs.get("CardFile"));
+					break;
 				case "GET_BALANCE":
-					result = atmStub.getBalance(account, cardFile);
-					System.exit(result);
+					result = atmStub.getBalance(finalArgs.get("Account"), finalArgs.get("CardFile"));
 					break;
 		}
+		try {
+			bankSocket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.exit(result);
+	}
+
+	private static double getAmountInDouble(Map<String, String> finalArgs) {
+		double amount = 0.0;
+		try {
+			amount = Double.parseDouble(finalArgs.get("Amount"));
+		} catch (NumberFormatException e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
+		return amount;
 	}
 	
 	private static Socket connectToServerSocket(String bankIP, int bankPort) {
@@ -56,21 +87,20 @@ public class ATMClient {
 		return socket;
 	}
 	
-	private static void processArgs(String[] args, String authFile, String bankIP, int bankPort, 
-							String cardFile, String account, String functionality, double amount) {
+	private static Map<String,String> processArgs(String[] args, Map<String,String> finalArgs) {
 		int i = 0; 
 		while (i < args.length) {
 			if(args[i].equals("-s") && i+1 < args.length) {
-				authFile = args[i+1];
+				finalArgs.put("AuthFile", args[i+1]);
 				i++;
 			}
 			else if(args[i].equals("-i") && i+1 < args.length) {
-				bankIP = args[i+1];
+				finalArgs.put("BankIP", args[i+1]);
 				i++;
 			}
 			else if(args[i].equals("-p") && i+1 < args.length) {
 				try {
-					bankPort = Integer.valueOf(args[i+1]);
+					finalArgs.put("BankPort", args[i+1]);
 					i++;					
 				} catch(NumberFormatException e) {
 					System.err.println("The port presented is not an integer.");
@@ -78,21 +108,21 @@ public class ATMClient {
 				}
 			}
 			else if(args[i].equals("-c") && i+1 < args.length) {
-				cardFile = args[i+1];
+				finalArgs.put("CardFile", args[i+1]);
 				i++;
 			}
 			else if(args[i].equals("-a") && i+1 < args.length) {
-				account = args[i+1];
+				finalArgs.put("Account", args[i+1]);
 				i++;
 			}
 			else if(args[i].equals("-n") && i+1 < args.length) {
-				if(functionality != null) {
+				if(finalArgs.get("Functionality") != null) {
 					System.err.println("Only one mode of operation must be chosen!");
 					System.exit(RETURN_VALUE_INVALID);
 				} 
-				functionality = "CREATE_ACCOUNT";
+				finalArgs.put("Functionality", "CREATE_ACCOUNT");
 				try {
-					amount = Double.valueOf(args[i+1]);
+					finalArgs.put("Amount", args[i+1]);
 					i++;					
 				} catch(NumberFormatException e) {
 					System.err.println("The balance given must be a number!");
@@ -101,13 +131,13 @@ public class ATMClient {
 				
 			}
 			else if(args[i].equals("-d") && i+1 < args.length) {
-				if(functionality != null) {
+				if(finalArgs.get("Functionality") != null) {
 					System.err.println("Only one mode of operation must be chosen!");
 					System.exit(RETURN_VALUE_INVALID);
 				} 
-				functionality = "DEPOSIT";
+				finalArgs.put("Functionality", "DEPOSIT");
 				try {
-					amount = Double.valueOf(args[i+1]);
+					finalArgs.put("Amount", args[i+1]);
 					i++;				
 				} catch(NumberFormatException e) {
 					System.err.println("The amount given must be a number!");
@@ -116,13 +146,13 @@ public class ATMClient {
 				
 			}
 			else if(args[i].equals("-w") && i+1 < args.length) {
-				if(functionality != null) {
+				if(finalArgs.get("Functionality") != null) {
 					System.err.println("Only one mode of operation must be chosen!");
 					System.exit(RETURN_VALUE_INVALID);
 				} 
-				functionality = "WITHDRAW";
+				finalArgs.put("Functionality", "WITHDRAW");
 				try {
-					amount = Double.valueOf(args[i+1]);
+					finalArgs.put("Amount", args[i+1]);
 					i++;				
 				} catch(NumberFormatException e) {
 					System.err.println("The amount given must be a number!");
@@ -130,24 +160,26 @@ public class ATMClient {
 				}
 			}
 			else if(args[i].equals("-g")) {
-				if(functionality != null) {
+				if(finalArgs.get("Functionality") != null) {
 					System.err.println("Only one mode of operation must be chosen!");
 					System.exit(RETURN_VALUE_INVALID);
 				} 
-				functionality = "GET_BALANCE";
+				finalArgs.put("Functionality", "GET_BALANCE");
 				i++;
 			}
 			i++; 
 		}
 		
-		if(account == null) {
+		if(finalArgs.get("Amount") == null) {
 			System.err.println("An account must be given!");
 			System.exit(RETURN_VALUE_INVALID);
 		} 
-		if(functionality == null) {
+		if(finalArgs.get("Functionality") == null) {
 			System.err.println("One mode of operation must be given!");
 			System.exit(RETURN_VALUE_INVALID);
 		}
+		
+		return finalArgs;
 	}
 
 	

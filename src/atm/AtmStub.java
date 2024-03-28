@@ -84,11 +84,10 @@ public class AtmStub {
 		}
 		
 		//verify cardFile is associated to account
-
 		try {
 			outToServer.writeObject("WITHDRAW");
 			outToServer.writeObject(account);
-			outToServer.writeObject(amount);
+			outToServer.writeObject(Double.toString(amount));
 			
 			String withdrawResult = (String) inFromServer.readObject();
 			if(withdrawResult.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;

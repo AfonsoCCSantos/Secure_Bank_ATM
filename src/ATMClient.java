@@ -170,7 +170,7 @@ public class ATMClient {
 			i++; 
 		}
 		
-		if(finalArgs.get("Amount") == null) {
+		if(finalArgs.get("Account") == null) {
 			System.err.println("An account must be given!");
 			System.exit(RETURN_VALUE_INVALID);
 		} 

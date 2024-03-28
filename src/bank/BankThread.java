@@ -18,9 +18,10 @@ public class BankThread extends Thread {
 	private Socket socket;
 	private Map<String, Double> accounts;
 
-	public BankThread(Socket socket) {
+	public BankThread(Socket socket, Map<String, Double> accounts) {
 		super();
 		this.socket = socket;
+		this.accounts = accounts;
 	}
 	
 	public void run() {

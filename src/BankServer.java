@@ -66,7 +66,7 @@ public class BankServer {
 			Socket inSocket;
 			try {
 				inSocket = serverSocket.accept();
-				BankThread newServerThread = new BankThread(inSocket);
+				BankThread newServerThread = new BankThread(inSocket, accounts);
 				newServerThread.start();
 			} catch (IOException e) {
 				e.printStackTrace();

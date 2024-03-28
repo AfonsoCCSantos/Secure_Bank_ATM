@@ -88,7 +88,12 @@ public class BankThread extends Thread {
 						}
 						break;
 					case "GET_BALANCE":
-						//get balance
+						accountName = (String) in.readObject();
+						double currentBalance = bankSkel.getBalance(accountName);
+						if (currentBalance == ACCOUNT_DOESNT_EXIST) {
+							out.writeObject("ACCOUNT_DOESNT_EXIST");
+						}
+						out.writeObject(currentBalance);
 						break;
 				}
 			} catch (ClassNotFoundException | IOException e) {

@@ -44,9 +44,7 @@ public class ATMClient {
 					System.exit(result);
 					break;
 		}
-			
 	}
-	
 	
 	private static Socket connectToServerSocket(String bankIP, int bankPort) {
 		Socket socket = null;

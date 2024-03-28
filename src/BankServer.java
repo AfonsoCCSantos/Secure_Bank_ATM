@@ -7,6 +7,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 
 import bank.BankThread;
 
@@ -30,11 +32,23 @@ public class BankServer {
 			System.exit(RETURN_VALUE_INVALID);			
 		}
 		
-		//for (int i = 0; i < args.length; i++) {
-			//if (args[i].substring(0,2).equals("-s") || args[i].substring(0,2).equals("-p")) {
-				
-			//}
-		//}
+        List<String> filteredArgs = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            String currentArg = args[i].substring(0,2);
+            String restArg = args[i].substring(2);
+			if (currentArg.equals("-s") || currentArg.equals("-p")) {
+                filteredArgs.add(currentArg);
+                if (restArg.isEmpty()){
+                    continue;
+                }
+                else {
+                    filteredArgs.add(restArg); 
+                }    
+			}
+            else {
+                filteredArgs.add(args[i]); 
+            }
+		}
 		
 		getArgs(args, authFileName, port);
 		

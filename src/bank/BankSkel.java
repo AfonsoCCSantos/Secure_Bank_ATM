@@ -43,13 +43,24 @@ public class BankSkel {
 		if (accounts.get(accountName) == null) return -3;
 		
 		synchronized (accounts) {
-			Double remainingAmount = accounts.get(accountName) - amount;
+			double remainingAmount = accounts.get(accountName) - amount;
 			if(remainingAmount < 0) return -4; 
 			accounts.put(accountName, remainingAmount);
 		}
 
 		System.out.println("{\"account\":\"" + accountName + "\",\"withdraw\":" + amount + "}\n"); 
 		return 0;
+	}
+	
+	public double getBalance(String accountName) {
+		if (accounts.get(accountName) == null) return -3;
+		double amount = 0;
+		
+		synchronized (accounts) {
+			amount = accounts.get(accountName);
+		}
+		System.out.println("{\"account\":\"" + accountName + "\",\"balance\":" + amount + "}\n"); 
+		return amount;
 	}
 
 

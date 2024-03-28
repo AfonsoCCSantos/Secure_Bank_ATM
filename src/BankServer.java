@@ -36,7 +36,7 @@ public class BankServer {
         for (int i = 0; i < args.length; i++) {
             String currentArg = args[i].substring(0,2);
             String restArg = args[i].substring(2);
-			if (currentArg.equals("-s") || currentArg.equals("-p")) {
+			if (currentArg.equalsIgnoreCase("-s") || currentArg.equalsIgnoreCase("-p")){
                 filteredArgs.add(currentArg);
                 if (restArg.isEmpty()){
                     continue;
@@ -49,8 +49,39 @@ public class BankServer {
                 filteredArgs.add(args[i]); 
             }
 		}
+        for (int i = 0; i < filteredArgs.size(); i++) {
+            String argI = filteredArgs.get(i);
+            if (argI.equalsIgnoreCase("-s") || argI.equalsIgnoreCase("-p")) {
+                continue;
+            }
+            else if (filteredArgs.get(i-1).equalsIgnoreCase("-p")) {
+
+                try {
+                    Integer.parseInt(argI);
+                }
+                catch (NumberFormatException e) {
+                    System.exit(RETURN_VALUE_INVALID);
+                }
+                
+                if (!argI.matches("(0|[1-9][0-9]*)") || Integer.parseInt(argI) < 1024 || Integer.parseInt(argI) > 65535) {
+                    System.exit(RETURN_VALUE_INVALID);                    
+                }
+            }
+            else if (filteredArgs.get(i-1).equalsIgnoreCase("-s")) {
+                if(argI.length() < 1 || argI.length() > 127 || argI.equalsIgnoreCase(".") || argI.equalsIgnoreCase("..")) {
+                    System.exit(RETURN_VALUE_INVALID);
+                }
+                else {
+                    for (String a : argI.split("")) {
+                        if (!a.matches("[_\\-\\.0-9a-z]")) {
+                            System.exit(RETURN_VALUE_INVALID);
+                        }
+                    }
+                }
+            }
+        }
 		
-		getArgs(args, authFileName, port);
+		getArgs(filteredArgs, authFileName, port);
 		
 		Path path = Paths.get(authFileName);
 		if (Files.exists(path)) {
@@ -97,19 +128,15 @@ public class BankServer {
 		System.out.println("Creating...");
 	}
 
-	private static void getArgs(String[] args, String authFileName, int port) {
-		for (int i = 0; i < args.length; i++) {
-			if (args[i].equals("-s") && i + 1 < args.length) {
-				authFileName = args[i+1];
+	private static void getArgs(List<String> filteredArgs, String authFileName, int port) {
+		for (int i = 0; i < filteredArgs.size(); i++) {
+			if (filteredArgs.get(i).equals("-s") && i + 1 < filteredArgs.size()) {
+				authFileName = filteredArgs.get(i+1);
 				i++;
 			}
-			else if (args[i].equals("-p") && i + 1 < args.length) {
-				try {
-                    port = Integer.parseInt(args[i + 1]);
-                    i++;
-                } catch (NumberFormatException e) {
-                    System.exit(RETURN_VALUE_INVALID);
-                }
+			else if (filteredArgs.get(i).equals("-p") && i + 1 < filteredArgs.size()) {
+				port = Integer.parseInt(filteredArgs.get(i+1));
+				i++;
 			}
 			else {
 				System.exit(RETURN_VALUE_INVALID);

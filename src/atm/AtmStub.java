@@ -50,6 +50,7 @@ public class AtmStub {
 		}
 		
 		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"initial_balance\":" + request.getValue() + "}\n"); 
+		System.out.flush();
 		
 		//create card file
 		createCardFile(request.getCardFile());
@@ -73,6 +74,7 @@ public class AtmStub {
 		}
 
 		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + request.getValue() + "}\n"); 
+		System.out.flush();
 		return 0;
 	}
 
@@ -93,6 +95,7 @@ public class AtmStub {
 		}
 
 		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"withdraw\":" + request.getValue() + "}\n"); 
+		System.out.flush();
 		return 0;
 	}
 
@@ -112,11 +115,13 @@ public class AtmStub {
 
 		//print account and amount
 		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + result + "}\n"); 
+		System.out.flush();
 		return 0;
 	}
 	
 	private static void createCardFile(String cardFileName) {
 		System.out.println("Card file created.");
+		System.out.flush();
 	}
 	
 	

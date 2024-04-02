@@ -61,6 +61,7 @@ public class BankServer {
 		
 		createAuthFile(finalArgs.get("authFileName"));
 		System.out.println("Auth file created");
+		System.out.flush();
 		
 		serverSocket = initialiseSocket(Integer.parseInt(finalArgs.get("port")));
 		
@@ -80,6 +81,7 @@ public class BankServer {
 	private static void addSigtermHook(ServerSocket serverSocket) {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Received SIGTERM, shutting down...");
+            System.out.flush();
             try {
 				serverSocket.close();
 			} catch (IOException e) {
@@ -102,6 +104,7 @@ public class BankServer {
 	
 	private static void createAuthFile(String authFileName) {
 		System.out.println("Creating...");
+		System.out.flush();
 	}
 
 	private static void getArgs(String[] args, Map<String, String> finalArgs) {

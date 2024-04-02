@@ -25,6 +25,7 @@ public class BankSkel {
 		}
 
 		System.out.println("{\"account\":\"" + accountName + "\",\"initial_balance\":" + balance + "}\n"); 
+		System.out.flush();
 		return 0;
 	}
 
@@ -36,6 +37,7 @@ public class BankSkel {
 		}
 
 		System.out.println("{\"account\":\"" + accountName + "\",\"deposit\":" + amount + "}\n"); 
+		System.out.flush();
 		return 0;
 	}
 
@@ -49,6 +51,7 @@ public class BankSkel {
 		}
 
 		System.out.println("{\"account\":\"" + accountName + "\",\"withdraw\":" + amount + "}\n"); 
+		System.out.flush();
 		return 0;
 	}
 	
@@ -60,6 +63,7 @@ public class BankSkel {
 			amount = accounts.get(accountName);
 		}
 		System.out.println("{\"account\":\"" + accountName + "\",\"balance\":" + amount + "}\n"); 
+		System.out.flush();
 		return amount;
 	}
 

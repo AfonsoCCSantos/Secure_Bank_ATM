@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import utils.RequestMessage;
+import utils.ResponseMessage;
 import utils.Utils;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,8 +42,8 @@ public class AtmStub {
 		try {
 			outToServer.writeObject(request);
 			
-			String createAccountResult = (String) inFromServer.readObject();
-			if(createAccountResult.equals("ACCOUNT_ALREADY_EXISTS")) return RETURN_VALUE_INVALID;
+			ResponseMessage createAccountResult = (ResponseMessage) inFromServer.readObject();
+			if(createAccountResult.equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) return RETURN_VALUE_INVALID;
 						
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
@@ -65,8 +66,8 @@ public class AtmStub {
 		try {
 			outToServer.writeObject(request);
 			
-			String depositResult = (String) inFromServer.readObject();
-			if(depositResult.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
+			ResponseMessage depositResult = (ResponseMessage) inFromServer.readObject();
+			if(depositResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) return RETURN_VALUE_INVALID;
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -84,9 +85,9 @@ public class AtmStub {
 		try {
 			outToServer.writeObject(request);
 			
-			String withdrawResult = (String) inFromServer.readObject();
-			if(withdrawResult.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
-			if(withdrawResult.equals("NEGATIVE_BALANCE")) return RETURN_VALUE_INVALID;
+			ResponseMessage withdrawResult = (ResponseMessage) inFromServer.readObject();
+			if(withdrawResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) return RETURN_VALUE_INVALID;
+			if(withdrawResult.equals(ResponseMessage.NEGATIVE_BALANCE)) return RETURN_VALUE_INVALID;
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}

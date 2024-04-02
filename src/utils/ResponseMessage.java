@@ -1,0 +1,5 @@
+package utils;
+
+public enum ResponseMessage {
+	SUCCESS, ACCOUNT_DOESNT_EXIST, NEGATIVE_BALANCE, ACCOUNT_ALREADY_EXISTS
+}

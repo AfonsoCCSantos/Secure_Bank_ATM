@@ -4,6 +4,8 @@ import java.net.Socket;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+
+import utils.RequestMessage;
 import utils.Utils;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,22 +27,19 @@ public class AtmStub {
 		this.inFromServer = Utils.gInputStream(bankSocket);
 	}
 	
-	public int createAccount(String account, double balance, String cardFileName) {
-		
+	public int createAccount(RequestMessage request) {
 		//verify if card file is unique
 //		Path path = Paths.get(cardFileName);
 //		if (Files.exists(path)) {
 //			return RETURN_VALUE_INVALID;
 //		}
 		
-		if (balance < BALANCE_INFERIOR_LIMIT) {
+		if (request.getValue() < BALANCE_INFERIOR_LIMIT) {
 			return RETURN_VALUE_INVALID;
 		} 
 		
 		try {
-			outToServer.writeObject("CREATE_ACCOUNT");
-			outToServer.writeObject(account);
-			outToServer.writeObject(Double.toString(balance));
+			outToServer.writeObject(request);
 			
 			String createAccountResult = (String) inFromServer.readObject();
 			if(createAccountResult.equals("ACCOUNT_ALREADY_EXISTS")) return RETURN_VALUE_INVALID;
@@ -49,24 +48,22 @@ public class AtmStub {
 			e.printStackTrace();
 		}
 		
-		System.out.println("{\"account\":\"" + account + "\",\"initial_balance\":" + balance + "}\n"); 
+		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"initial_balance\":" + request.getValue() + "}\n"); 
 		
 		//create card file
-		createCardFile(cardFileName);
+		createCardFile(request.getCardFile());
 		return 0;
 	}
 
-	public int depositAmount(String account, double amount, String cardFileName) {
-		if (amount <= 0) {
+	public int depositAmount(RequestMessage request) {
+		if (request.getValue() <= 0) {
 			return RETURN_VALUE_INVALID;
 		} 
 
 		//verify cardFile is associated to account
 
 		try {
-			outToServer.writeObject("DEPOSIT");
-			outToServer.writeObject(account);
-			outToServer.writeObject(Double.toString(amount));
+			outToServer.writeObject(request);
 			
 			String depositResult = (String) inFromServer.readObject();
 			if(depositResult.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
@@ -74,20 +71,18 @@ public class AtmStub {
 			e.printStackTrace();
 		}
 
-		System.out.println("{\"account\":\"" + account + "\",\"deposit\":" + amount + "}\n"); 
+		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + request.getValue() + "}\n"); 
 		return 0;
 	}
 
-	public int withdrawAmount(String account, double amount, String cardFileName) {
-		if (amount <= 0) {
+	public int withdrawAmount(RequestMessage request) {
+		if (request.getValue() <= 0) {
 			return RETURN_VALUE_INVALID;
 		}
 		
 		//verify cardFile is associated to account
 		try {
-			outToServer.writeObject("WITHDRAW");
-			outToServer.writeObject(account);
-			outToServer.writeObject(Double.toString(amount));
+			outToServer.writeObject(request);
 			
 			String withdrawResult = (String) inFromServer.readObject();
 			if(withdrawResult.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
@@ -96,17 +91,16 @@ public class AtmStub {
 			e.printStackTrace();
 		}
 
-		System.out.println("{\"account\":\"" + account + "\",\"withdraw\":" + amount + "}\n"); 
+		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"withdraw\":" + request.getValue() + "}\n"); 
 		return 0;
 	}
 
-	public int getBalance(String account, String cardFileName) {
+	public int getBalance(RequestMessage request) {
 		String result = null;
 		//verify if account exists and get amount
 		//verify cardFile is associated to account
 		try {
-			outToServer.writeObject("GET_BALANCE");
-			outToServer.writeObject(account);
+			outToServer.writeObject(request);
 			
 			//receive result from bank
 			result = (String) inFromServer.readObject();
@@ -116,12 +110,12 @@ public class AtmStub {
 		}
 
 		//print account and amount
-		System.out.println("{\"account\":\"" + account + "\",\"deposit\":" + result + "}\n"); 
+		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + result + "}\n"); 
 		return 0;
 	}
 	
 	private static void createCardFile(String cardFileName) {
-		System.out.println("Creating...");
+		System.out.println("Card file created.");
 	}
 	
 	

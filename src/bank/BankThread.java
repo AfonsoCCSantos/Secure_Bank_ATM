@@ -6,6 +6,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Map;
 
+import utils.RequestMessage;
+import utils.RequestType;
 import utils.Utils;
 
 public class BankThread extends Thread {
@@ -30,20 +32,12 @@ public class BankThread extends Thread {
 		BankSkel bankSkel = new BankSkel(in, out, accounts);
 		
 		while (true) {
-			String command;
+			RequestMessage request;
 			try {
-				command = (String) in.readObject();
-				switch (command) {
-					case "CREATE_ACCOUNT":
-						String accountName = (String) in.readObject();
-						String balanceString = (String) in.readObject();
-						double balance = 0.0;
-						try {
-		                    balance = Double.parseDouble(balanceString);
-		                } catch (NumberFormatException e) {
-		                    System.exit(RETURN_VALUE_INVALID);
-		                }
-						int returnCode = bankSkel.createAccount(accountName, balance);
+				request = (RequestMessage) in.readObject();
+				switch (request.getRequestType()) {
+					case CREATE_ACCOUNT:
+						int returnCode = bankSkel.createAccount(request.getAccount(), request.getValue());
 						if (returnCode == ACCOUNT_ALREADY_EXISTS) {
 							out.writeObject("ACCOUNT_ALREADY_EXISTS");
 						}
@@ -51,16 +45,8 @@ public class BankThread extends Thread {
 							out.writeObject("SUCCESS");
 						}
 						break;
-					case "DEPOSIT":
-						accountName = (String) in.readObject();
-						String amountString = (String) in.readObject();
-						double amount = 0.0;
-						try {
-							amount = Double.parseDouble(amountString);
-						} catch (NumberFormatException e) {
-							System.exit(RETURN_VALUE_INVALID);
-						}
-						returnCode = bankSkel.deposit(accountName, amount);
+					case DEPOSIT:
+						returnCode = bankSkel.deposit(request.getAccount(), request.getValue());
 						if (returnCode == ACCOUNT_DOESNT_EXIST) {
 							out.writeObject("ACCOUNT_DOESNT_EXIST");
 						}
@@ -68,16 +54,8 @@ public class BankThread extends Thread {
 							out.writeObject("SUCCESS");
 						}
 						break;
-					case "WITHDRAW":
-						accountName = (String) in.readObject();
-						amountString = (String) in.readObject();
-						amount = 0.0;
-						try {
-							amount = Double.parseDouble(amountString);
-						} catch (NumberFormatException e) {
-							System.exit(RETURN_VALUE_INVALID);
-						}
-						returnCode = bankSkel.withdraw(accountName, amount);
+					case WITHDRAW:
+						returnCode = bankSkel.withdraw(request.getAccount(), request.getValue());
 						if (returnCode == ACCOUNT_DOESNT_EXIST) {
 							out.writeObject("ACCOUNT_DOESNT_EXIST");
 						}
@@ -88,10 +66,8 @@ public class BankThread extends Thread {
 							out.writeObject("SUCCESS");
 						}
 						break;
-					case "GET_BALANCE":
-						accountName = (String) in.readObject();
-						System.out.println();
-						double currentBalance = bankSkel.getBalance(accountName);
+					case GET_BALANCE:
+						double currentBalance = bankSkel.getBalance(request.getAccount());
 						if (currentBalance == ACCOUNT_DOESNT_EXIST) {
 							out.writeObject("ACCOUNT_DOESNT_EXIST");
 						}

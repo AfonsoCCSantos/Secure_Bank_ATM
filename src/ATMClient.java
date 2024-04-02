@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.HashMap;
 
 import atm.AtmStub;
+import utils.RequestMessage;
+import utils.RequestType;
 
 import java.io.IOException;
 
@@ -42,21 +44,26 @@ public class ATMClient {
 		
 		double amount = 0.0;
 		int result = 0;
+		RequestMessage request = null;
 		switch(finalArgs.get("Functionality")) {
 				case "CREATE_ACCOUNT":
 					amount = getAmountInDouble(finalArgs);
-					result = atmStub.createAccount(finalArgs.get("Account"), amount, finalArgs.get("CardFile"));
+					request = new RequestMessage(RequestType.CREATE_ACCOUNT, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
+					result = atmStub.createAccount(request);
 					break;
 				case "DEPOSIT":
 					amount = getAmountInDouble(finalArgs);
-					result = atmStub.depositAmount(finalArgs.get("Account"), amount, finalArgs.get("CardFile"));
+					request = new RequestMessage(RequestType.DEPOSIT, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
+					result = atmStub.depositAmount(request);
 					break;
 				case "WITHDRAW":
 					amount = getAmountInDouble(finalArgs);
-					result = atmStub.withdrawAmount(finalArgs.get("Account"), amount, finalArgs.get("CardFile"));
+					request = new RequestMessage(RequestType.WITHDRAW, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
+					result = atmStub.withdrawAmount(request);
 					break;
 				case "GET_BALANCE":
-					result = atmStub.getBalance(finalArgs.get("Account"), finalArgs.get("CardFile"));
+					request = new RequestMessage(RequestType.GET_BALANCE, finalArgs.get("Account"), finalArgs.get("CardFile"), -1);
+					result = atmStub.getBalance(request);
 					break;
 		}
 		try {

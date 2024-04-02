@@ -8,12 +8,14 @@ public class RequestMessage implements Serializable {
 	
 	private RequestType requestType;
 	private String account;
+	private String cardFile;
 	private double value;
 	
-	public RequestMessage(RequestType requestType, String account, double value) {
+	public RequestMessage(RequestType requestType, String account, String cardFile, double value) {
 		super();
 		this.requestType = requestType;
 		this.account = account;
+		this.cardFile = cardFile;
 		this.value = value;
 	}
 
@@ -33,6 +35,14 @@ public class RequestMessage implements Serializable {
 		this.account = account;
 	}
 
+	public String getCardFile() {
+		return cardFile;
+	}
+
+	public void setCardFile(String cardFile) {
+		this.cardFile = cardFile;
+	}
+
 	public double getValue() {
 		return value;
 	}
@@ -40,4 +50,5 @@ public class RequestMessage implements Serializable {
 	public void setValue(double value) {
 		this.value = value;
 	}
+
 }

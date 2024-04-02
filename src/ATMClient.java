@@ -19,6 +19,7 @@ public class ATMClient {
 		
 		if (args.length < 2) {
 			System.err.println("Not enough arguments were presented.");
+			System.err.flush();
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
@@ -111,6 +112,7 @@ public class ATMClient {
 					i++;					
 				} catch(NumberFormatException e) {
 					System.err.println("The port presented is not an integer.");
+					System.err.flush();
 					System.exit(RETURN_VALUE_INVALID);
 				}
 			}
@@ -125,6 +127,7 @@ public class ATMClient {
 			else if(args[i].equals("-n") && i+1 < args.length) {
 				if(finalArgs.get("Functionality") != null) {
 					System.err.println("Only one mode of operation must be chosen!");
+					System.err.flush();
 					System.exit(RETURN_VALUE_INVALID);
 				} 
 				finalArgs.put("Functionality", "CREATE_ACCOUNT");
@@ -133,6 +136,7 @@ public class ATMClient {
 					i++;					
 				} catch(NumberFormatException e) {
 					System.err.println("The balance given must be a number!");
+					System.err.flush();
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				
@@ -140,6 +144,7 @@ public class ATMClient {
 			else if(args[i].equals("-d") && i+1 < args.length) {
 				if(finalArgs.get("Functionality") != null) {
 					System.err.println("Only one mode of operation must be chosen!");
+					System.err.flush();
 					System.exit(RETURN_VALUE_INVALID);
 				} 
 				finalArgs.put("Functionality", "DEPOSIT");
@@ -148,6 +153,7 @@ public class ATMClient {
 					i++;				
 				} catch(NumberFormatException e) {
 					System.err.println("The amount given must be a number!");
+					System.err.flush();
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				
@@ -155,6 +161,7 @@ public class ATMClient {
 			else if(args[i].equals("-w") && i+1 < args.length) {
 				if(finalArgs.get("Functionality") != null) {
 					System.err.println("Only one mode of operation must be chosen!");
+					System.err.flush();
 					System.exit(RETURN_VALUE_INVALID);
 				} 
 				finalArgs.put("Functionality", "WITHDRAW");
@@ -163,12 +170,14 @@ public class ATMClient {
 					i++;				
 				} catch(NumberFormatException e) {
 					System.err.println("The amount given must be a number!");
+					System.err.flush();
 					System.exit(RETURN_VALUE_INVALID);
 				}
 			}
 			else if(args[i].equals("-g")) {
 				if(finalArgs.get("Functionality") != null) {
 					System.err.println("Only one mode of operation must be chosen!");
+					System.err.flush();
 					System.exit(RETURN_VALUE_INVALID);
 				} 
 				finalArgs.put("Functionality", "GET_BALANCE");
@@ -179,10 +188,12 @@ public class ATMClient {
 		
 		if(finalArgs.get("Account") == null) {
 			System.err.println("An account must be given!");
+			System.err.flush();
 			System.exit(RETURN_VALUE_INVALID);
 		} 
 		if(finalArgs.get("Functionality") == null) {
 			System.err.println("One mode of operation must be given!");
+			System.err.flush();
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		

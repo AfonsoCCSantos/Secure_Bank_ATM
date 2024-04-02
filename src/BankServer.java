@@ -30,6 +30,8 @@ public class BankServer {
 		finalArgs.put("port", null);
 		finalArgs.put("AuthFile", null);
 		
+		
+		
 		getArgs(args, finalArgs);
 		
 		//Default parameters
@@ -39,6 +41,8 @@ public class BankServer {
 		if (finalArgs.get("AuthFile") == null) {
 			finalArgs.put("AuthFile", DEFAULT_AUTH_FILE);
 		}
+		
+		
 		
 		Path path = Paths.get(finalArgs.get("AuthFile"));
 		if (Files.exists(path)) {
@@ -110,6 +114,8 @@ public class BankServer {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
+					if (!Utils.verifyFileNames(args[i+1])) 
+						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("AuthFile", args[i+1]);
 					i++;
 				}
@@ -117,6 +123,8 @@ public class BankServer {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
+					if (!Utils.verifyFileNames(restArg)) 
+						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("AuthFile", restArg);
 				}
 			}

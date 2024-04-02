@@ -47,4 +47,15 @@ public class Utils {
 		return true;
 	}
 	
+	public static boolean verifyFileNames(String fileName) {
+		if(fileName.length() < 1 || fileName.length() > 127 || fileName.equals(".") || fileName.equals("..")) 
+			return false; 
+		
+		for(String c : fileName.split("")) {
+			if(!c.matches("[_\\-\\.0-9a-z]")) 
+				return false;
+		}
+		return true;
+	}
+	
 }

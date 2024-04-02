@@ -132,6 +132,8 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
+					if (!Utils.verifyFileNames(args[i+1])) 
+						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("AuthFile", args[i+1]);
 					i++;
 				}
@@ -139,6 +141,8 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
+					if (!Utils.verifyFileNames(restArg)) 
+						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("AuthFile", restArg);
 				}
 			}
@@ -183,6 +187,8 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
+					if (!Utils.verifyFileNames(args[i+1])) 
+						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("CardFile", args[i+1]);
 					i++;
 				}
@@ -190,6 +196,8 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
+					if (!Utils.verifyFileNames(restArg)) 
+						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("CardFile", restArg);
 				}
 			}

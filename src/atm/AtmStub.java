@@ -110,7 +110,7 @@ public class AtmStub {
 		}
 
 		//print account and amount
-		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + result + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"balance\":" + result + "}\n");
 		return 0;
 	}
 	

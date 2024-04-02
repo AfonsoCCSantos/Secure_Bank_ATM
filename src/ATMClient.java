@@ -1,5 +1,7 @@
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -22,9 +24,9 @@ public class ATMClient {
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
-		finalArgs.put("BankIP", "127.0.0.1");
-		finalArgs.put("BankPort", "3000");
-		finalArgs.put("AuthFile", "bank.auth");
+		finalArgs.put("BankIP", null); //127.0.0.1
+		finalArgs.put("BankPort", null); //3000
+		finalArgs.put("AuthFile", null); //bank.auth
 		finalArgs.put("CardFile", null);
 		finalArgs.put("Account", null);
 		finalArgs.put("Functionality", null);
@@ -32,15 +34,21 @@ public class ATMClient {
 		
 		finalArgs = processArgs(args, finalArgs);
 		
-		int bankPort = 3000;
+		
+		if (finalArgs.get("BankIP") == null) {
+			finalArgs.put("BankIP", "127.0.0.1");
+		}
+		
+		int bankPort;
 		try {
 			bankPort = Integer.parseInt(finalArgs.get("BankPort"));
 		} catch (NumberFormatException e) {
-			System.exit(RETURN_VALUE_INVALID);
+			bankPort = 3000;
 		}
 		
 		Socket bankSocket = connectToServerSocket(finalArgs.get("BankIP"), bankPort);
 		AtmStub atmStub = new AtmStub(bankSocket);
+		
 		
 		double amount = 0.0;
 		int result = 0;
@@ -97,74 +105,150 @@ public class ATMClient {
 	private static Map<String,String> processArgs(String[] args, Map<String,String> finalArgs) {
 		int i = 0; 
 		while (i < args.length) {
-			if(args[i].equals("-s") && i+1 < args.length) {
-				finalArgs.put("AuthFile", args[i+1]);
-				i++;
+			String currentArg = null;
+            String restArg = null;
+			if (args[i].length() > 2) {
+				currentArg = args[i].substring(0,2);
+				restArg = args[i].substring(2);
 			}
-			else if(args[i].equals("-i") && i+1 < args.length) {
-				finalArgs.put("BankIP", args[i+1]);
-				i++;
+			currentArg = currentArg == null ? args[i] : currentArg;
+			
+			if(currentArg.equals("-a")) {
+				if (finalArgs.get("Account") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				if (restArg == null && i+1 < args.length) {
+					finalArgs.put("Account", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				else {
+					finalArgs.put("Account", restArg);
+				}
 			}
-			else if(args[i].equals("-p") && i+1 < args.length) {
-				try {
+			else if(currentArg.equals("-s")) {
+				if (finalArgs.get("AuthFile") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				if (restArg == null && i+1 < args.length) {
+					finalArgs.put("AuthFile", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				else {
+					finalArgs.put("AuthFile", restArg);
+				}
+			}
+			else if(currentArg.equals("-i")) {
+				if (finalArgs.get("BankIP") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				if (restArg == null && i+1 < args.length) {
+					finalArgs.put("BankIP", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				else {
+					finalArgs.put("BankIP", restArg);
+				}
+			}
+			else if(currentArg.equals("-p")) {
+				if (finalArgs.get("BankPort") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				if (restArg == null && i+1 < args.length) {
 					finalArgs.put("BankPort", args[i+1]);
-					i++;					
-				} catch(NumberFormatException e) {
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
 					System.exit(RETURN_VALUE_INVALID);
 				}
-			}
-			else if(args[i].equals("-c") && i+1 < args.length) {
-				finalArgs.put("CardFile", args[i+1]);
-				i++;
-			}
-			else if(args[i].equals("-a") && i+1 < args.length) {
-				finalArgs.put("Account", args[i+1]);
-				i++;
-			}
-			else if(args[i].equals("-n") && i+1 < args.length) {
-				if(finalArgs.get("Functionality") != null) {
-					System.exit(RETURN_VALUE_INVALID);
-				} 
-				finalArgs.put("Functionality", "CREATE_ACCOUNT");
-				try {
-					finalArgs.put("Amount", args[i+1]);
-					i++;					
-				} catch(NumberFormatException e) {
-					System.exit(RETURN_VALUE_INVALID);
+				else {
+					finalArgs.put("BankPort", restArg);
 				}
 			}
-			else if(args[i].equals("-d") && i+1 < args.length) {
-				if(finalArgs.get("Functionality") != null) {
-					System.exit(RETURN_VALUE_INVALID);
-				} 
-				finalArgs.put("Functionality", "DEPOSIT");
-				try {
-					finalArgs.put("Amount", args[i+1]);
-					i++;				
-				} catch(NumberFormatException e) {
+			else if(currentArg.equals("-c")) {
+				if (finalArgs.get("CardFile") != null) {
 					System.exit(RETURN_VALUE_INVALID);
 				}
+				if (restArg == null && i+1 < args.length) {
+					finalArgs.put("CardFile", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				else {
+					finalArgs.put("CardFile", restArg);
+				}
+			}
+			else if(currentArg.equals("-n")) {
 				
-			}
-			else if(args[i].equals("-w") && i+1 < args.length) {
-				if(finalArgs.get("Functionality") != null) {
-					System.exit(RETURN_VALUE_INVALID);
-				} 
-				finalArgs.put("Functionality", "WITHDRAW");
-				try {
-					finalArgs.put("Amount", args[i+1]);
-					i++;				
-				} catch(NumberFormatException e) {
+				if (finalArgs.get("Functionality") != null) {
 					System.exit(RETURN_VALUE_INVALID);
 				}
-			}
-			else if(args[i].equals("-g")) {
-				if(finalArgs.get("Functionality") != null) {
+				finalArgs.put("Functionality", "CREATE_ACCOUNT");
+				if (restArg == null && i+1 < args.length) {
+					System.out.println("a");
+					finalArgs.put("Amount", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
 					System.exit(RETURN_VALUE_INVALID);
-				} 
-				finalArgs.put("Functionality", "GET_BALANCE");
-				i++;
+				}
+				else {
+					finalArgs.put("Amount", restArg);
+				}
 			}
+			else if(currentArg.equals("-d")) {
+				if (finalArgs.get("Functionality") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				finalArgs.put("Functionality", "DEPOSIT");
+				if (restArg == null && i+1 < args.length) {
+					finalArgs.put("Amount", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				else {
+					finalArgs.put("Amount", restArg);
+				}
+			}
+			else if(currentArg.equals("-w")) {
+				if (finalArgs.get("Functionality") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				finalArgs.put("Functionality", "WITHDRAW");
+				if (restArg == null && i+1 < args.length) {
+					finalArgs.put("Amount", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				else {
+					finalArgs.put("Amount", restArg);
+				}
+			}
+			else if(currentArg.equals("-g")) {
+				if (finalArgs.get("Functionality") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				finalArgs.put("Functionality", "GET_BALANCE");
+			}
+//			System.out.println(finalArgs.get("Account"));
+//			System.out.println(finalArgs.get("Functionality"));
+//			System.out.println(finalArgs.get("Amount"));
+//			System.out.println();
+			
 			i++; 
 		}
 		

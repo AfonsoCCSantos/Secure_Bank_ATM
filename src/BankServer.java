@@ -103,7 +103,7 @@ public class BankServer {
 	}
 	
 	private static void createAuthFile(String authFileName) {
-		System.out.println("Creating...");
+		System.out.println("Created");
 		System.out.flush();
 	}
 

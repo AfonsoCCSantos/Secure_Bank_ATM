@@ -49,9 +49,7 @@ public class AtmStub {
 			e.printStackTrace();
 		}
 		
-		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"initial_balance\":" + request.getValue() + "}\n"); 
-		System.out.flush();
-		
+		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"initial_balance\":" + request.getValue() + "}\n");
 		//create card file
 		createCardFile(request.getCardFile());
 		return 0;
@@ -72,9 +70,8 @@ public class AtmStub {
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-
-		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + request.getValue() + "}\n"); 
-		System.out.flush();
+		
+		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + request.getValue() + "}\n");
 		return 0;
 	}
 
@@ -93,9 +90,8 @@ public class AtmStub {
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-
-		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"withdraw\":" + request.getValue() + "}\n"); 
-		System.out.flush();
+		
+		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"withdraw\":" + request.getValue() + "}\n");
 		return 0;
 	}
 
@@ -114,14 +110,12 @@ public class AtmStub {
 		}
 
 		//print account and amount
-		System.out.println("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + result + "}\n"); 
-		System.out.flush();
+		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + result + "}\n");
 		return 0;
 	}
 	
 	private static void createCardFile(String cardFileName) {
-		System.out.println("Card file created.");
-		System.out.flush();
+		Utils.printAndFlush("Card file created.");
 	}
 	
 	

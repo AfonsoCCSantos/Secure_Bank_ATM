@@ -29,7 +29,7 @@ public class Utils {
         return inStream;
     }
 	
-	public static void printErrAndFlush(String toPrint) {
+	public static void printAndFlush(String toPrint) {
 		System.err.println(toPrint);
 		System.err.flush();
 	}

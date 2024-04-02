@@ -4,6 +4,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Map;
 
+import utils.Utils;
+
 public class BankSkel {
 	
 	private ObjectInputStream in;
@@ -24,8 +26,7 @@ public class BankSkel {
 			accounts.put(accountName, balance);
 		}
 
-		System.out.println("{\"account\":\"" + accountName + "\",\"initial_balance\":" + balance + "}\n"); 
-		System.out.flush();
+		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"initial_balance\":" + balance + "}\n");
 		return 0;
 	}
 
@@ -36,8 +37,7 @@ public class BankSkel {
 			accounts.put(accountName, accounts.get(accountName) + amount);
 		}
 
-		System.out.println("{\"account\":\"" + accountName + "\",\"deposit\":" + amount + "}\n"); 
-		System.out.flush();
+		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"deposit\":" + amount + "}\n");
 		return 0;
 	}
 
@@ -49,9 +49,8 @@ public class BankSkel {
 			if(remainingAmount < 0) return -4; 
 			accounts.put(accountName, remainingAmount);
 		}
-
-		System.out.println("{\"account\":\"" + accountName + "\",\"withdraw\":" + amount + "}\n"); 
-		System.out.flush();
+		
+		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"withdraw\":" + amount + "}\n");
 		return 0;
 	}
 	
@@ -62,8 +61,7 @@ public class BankSkel {
 		synchronized (accounts) {
 			amount = accounts.get(accountName);
 		}
-		System.out.println("{\"account\":\"" + accountName + "\",\"balance\":" + amount + "}\n"); 
-		System.out.flush();
+		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"balance\":" + amount + "}\n");
 		return amount;
 	}
 

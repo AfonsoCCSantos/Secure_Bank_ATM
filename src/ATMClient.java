@@ -1,14 +1,10 @@
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 import atm.AtmStub;
 import utils.RequestMessage;
 import utils.RequestType;
-import utils.Utils;
 
 import java.io.IOException;
 
@@ -33,7 +29,6 @@ public class ATMClient {
 		finalArgs.put("Amount", null);
 		
 		finalArgs = processArgs(args, finalArgs);
-		
 		
 		if (finalArgs.get("BankIP") == null) {
 			finalArgs.put("BankIP", "127.0.0.1");

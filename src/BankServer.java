@@ -14,7 +14,7 @@ import bank.BankThread;
 
 public class BankServer {
 	
-	private static final int DEFAULT_BANK_PORT = 3000;
+	private static final String DEFAULT_BANK_PORT = "3000";
 	private static final int RETURN_VALUE_INVALID = 255;  
 	private static final String DEFAULT_AUTH_FILE = "bank.auth";
 	private static Map<String, Double> accounts;
@@ -26,40 +26,29 @@ public class BankServer {
 		Scanner sc = new Scanner(System.in);
 		Map<String, String> finalArgs = new HashMap<String, String>();
 		
-		//Default parameters
-		finalArgs.put("port", String.valueOf(DEFAULT_BANK_PORT));
-		finalArgs.put("authFileName", DEFAULT_AUTH_FILE);
+		finalArgs.put("port", null);
+		finalArgs.put("AuthFile", null);
 		
 		if (args.length >= 4096) {
 			System.exit(RETURN_VALUE_INVALID);			
 		}
 		
-        List<String> filteredArgs = new ArrayList<>();
-        for (int i = 0; i < args.length; i++) {
-            String currentArg = args[i].substring(0,2);
-            String restArg = args[i].substring(2);
-			if (currentArg.equals("-s") || currentArg.equals("-p")) {
-                filteredArgs.add(currentArg);
-                if (restArg.isEmpty()){
-                    continue;
-                }
-                else {
-                    filteredArgs.add(restArg); 
-                }    
-			}
-            else {
-                filteredArgs.add(args[i]); 
-            }
-		}
-		
 		getArgs(args, finalArgs);
 		
-		Path path = Paths.get(finalArgs.get("authFileName"));
+		//Default parameters
+		if (finalArgs.get("port") == null) {
+			finalArgs.put("port", DEFAULT_BANK_PORT);
+		}
+		if (finalArgs.get("AuthFile") == null) {
+			finalArgs.put("AuthFile", DEFAULT_AUTH_FILE);
+		}
+		
+		Path path = Paths.get(finalArgs.get("AuthFile"));
 		if (Files.exists(path)) {
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
-		createAuthFile(finalArgs.get("authFileName"));
+		createAuthFile(finalArgs.get("AuthFile"));
 		System.out.println("Auth file created");
 		System.out.flush();
 		
@@ -75,7 +64,6 @@ public class BankServer {
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	private static void addSigtermHook(ServerSocket serverSocket) {
@@ -109,17 +97,43 @@ public class BankServer {
 
 	private static void getArgs(String[] args, Map<String, String> finalArgs) {
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].equals("-s") && i + 1 < args.length) {
-				finalArgs.put("authFileName", args[i+1]);
-				i++;
+			String currentArg = null;
+            String restArg = null;
+			if (args[i].length() > 2) {
+				currentArg = args[i].substring(0,2);
+				restArg = args[i].substring(2);
 			}
-			else if (args[i].equals("-p") && i + 1 < args.length) {
-				try {
-                    finalArgs.put("port", args[i + 1]);
-                    i++;
-                } catch (NumberFormatException e) {
-                    System.exit(RETURN_VALUE_INVALID);
-                }
+			currentArg = currentArg == null ? args[i] : currentArg;
+			
+			if (currentArg.equals("-s")) {
+				if (finalArgs.get("AuthFile") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				if (restArg == null && i+1 < args.length) {
+					finalArgs.put("AuthFile", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				else {
+					finalArgs.put("AuthFile", restArg);
+				}
+			}
+			else if (currentArg.equals("-p")) {
+				if (finalArgs.get("port") != null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				if (restArg == null && i+1 < args.length) {
+					finalArgs.put("port", args[i+1]);
+					i++;
+				}
+				else if (i + 1 >= args.length && restArg == null) {
+					System.exit(RETURN_VALUE_INVALID);
+				}
+				else {
+					finalArgs.put("port", restArg);
+				}
 			}
 			else {
 				System.exit(RETURN_VALUE_INVALID);

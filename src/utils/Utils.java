@@ -34,4 +34,17 @@ public class Utils {
 		System.err.flush();
 	}
 	
+	public static boolean verifyPort(String port) {
+		int portNumber = 0;
+		try {
+			portNumber = Integer.parseInt(port);
+		} catch (NumberFormatException e) {
+			return false;
+		}
+		if (port.charAt(0) == '0' || portNumber < 1024 || portNumber > 65535) {
+			return false;
+		}
+		return true;
+	}
+	
 }

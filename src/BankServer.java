@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import bank.BankThread;
+import utils.Utils;
 
 public class BankServer {
 	
@@ -124,6 +125,9 @@ public class BankServer {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
+					if(!Utils.verifyPort(args[i+1])) {
+						System.exit(RETURN_VALUE_INVALID);
+					}
 					finalArgs.put("port", args[i+1]);
 					i++;
 				}
@@ -131,6 +135,9 @@ public class BankServer {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
+					if(!Utils.verifyPort(restArg)) {
+						System.exit(RETURN_VALUE_INVALID);
+					}
 					finalArgs.put("port", restArg);
 				}
 			}

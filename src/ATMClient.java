@@ -100,6 +100,9 @@ public class ATMClient {
 	private static Map<String,String> processArgs(String[] args, Map<String,String> finalArgs) {
 		int i = 0; 
 		while (i < args.length) {
+			if (args[i].length() >= 4096) {
+				System.exit(RETURN_VALUE_INVALID);			
+			}
 			String currentArg = null;
             String restArg = null;
 			if (args[i].length() > 2) {

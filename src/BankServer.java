@@ -29,10 +29,6 @@ public class BankServer {
 		finalArgs.put("port", null);
 		finalArgs.put("AuthFile", null);
 		
-		if (args.length >= 4096) {
-			System.exit(RETURN_VALUE_INVALID);			
-		}
-		
 		getArgs(args, finalArgs);
 		
 		//Default parameters
@@ -97,6 +93,9 @@ public class BankServer {
 
 	private static void getArgs(String[] args, Map<String, String> finalArgs) {
 		for (int i = 0; i < args.length; i++) {
+			if (args[i].length() >= 4096) {
+				System.exit(RETURN_VALUE_INVALID);			
+			}
 			String currentArg = null;
             String restArg = null;
 			if (args[i].length() > 2) {

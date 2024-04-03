@@ -11,6 +11,8 @@ import utils.Utils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
+import java.util.Locale;
 import java.io.IOException;
 
 
@@ -48,8 +50,7 @@ public class AtmStub {
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		
-		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"initial_balance\":" + request.getValue() + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"initial_balance\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
 		//create card file
 		createCardFile(request.getCardFile());
 		return 0;
@@ -70,8 +71,7 @@ public class AtmStub {
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		
-		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + request.getValue() + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
 		return 0;
 	}
 
@@ -90,8 +90,7 @@ public class AtmStub {
 		} catch(IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		
-		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"withdraw\":" + request.getValue() + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"withdraw\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
 		return 0;
 	}
 

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import bank.BankThread;
 import utils.Utils;
@@ -21,6 +22,7 @@ public class BankServer {
 	private static Map<String, Double> accounts;
 	
 	public static void main(String[] args) {
+		Locale.setDefault(new Locale("en", "US"));
 		ServerSocket serverSocket = null;
 		addSigtermHook(serverSocket);
 		accounts = new HashMap<String, Double>();
@@ -29,8 +31,6 @@ public class BankServer {
 		
 		finalArgs.put("port", null);
 		finalArgs.put("AuthFile", null);
-		
-		
 		
 		getArgs(args, finalArgs);
 		

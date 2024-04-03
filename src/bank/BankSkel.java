@@ -2,6 +2,7 @@ package bank;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Locale;
 import java.util.Map;
 
 import utils.Utils;
@@ -25,8 +26,7 @@ public class BankSkel {
 		synchronized (accounts) {
 			accounts.put(accountName, balance);
 		}
-
-		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"initial_balance\":" + balance + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"initial_balance\":" + String.format(Locale.ROOT, "%.2f", balance) + "}\n");
 		return 0;
 	}
 
@@ -37,7 +37,7 @@ public class BankSkel {
 			accounts.put(accountName, accounts.get(accountName) + amount);
 		}
 
-		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"deposit\":" + amount + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"deposit\":" + String.format(Locale.ROOT, "%.2f", amount) + "}\n");
 		return 0;
 	}
 
@@ -50,7 +50,7 @@ public class BankSkel {
 			accounts.put(accountName, remainingAmount);
 		}
 		
-		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"withdraw\":" + amount + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"withdraw\":" + String.format(Locale.ROOT, "%.2f", amount) + "}\n");
 		return 0;
 	}
 	
@@ -61,7 +61,7 @@ public class BankSkel {
 		synchronized (accounts) {
 			amount = accounts.get(accountName);
 		}
-		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"balance\":" + amount + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"balance\":" + String.format(Locale.ROOT, "%.2f", amount) + "}\n");
 		return amount;
 	}
 

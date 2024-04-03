@@ -87,4 +87,38 @@ public class Utils {
 		return true;
 	}
 	
+	//-Parte fracional tem sempre dois digitos  (should match /[0-9]{2}/)
+	//-Command line input amounts are bounded from 0.00 to 4294967295.99 inclusively
+	//-an account may accrue any non-negative balance over multiple transactions (that can be represented in 8 byte datatype
+	public static boolean verifyAmount(String amount) {
+		
+		String[] amountSeparated = amount.split("\\.");
+		if (amountSeparated.length != 2) 
+			return false;
+		
+		String wholeAmount = amountSeparated[0];
+		String fractionalPart = amountSeparated[1];
+		
+		
+		
+		if (fractionalPart.length() != 2)
+			return false;
+			
+		double amountInDouble = 0.0;
+		try {
+			amountInDouble = Double.parseDouble(amount);	
+		} catch (NumberFormatException e) {
+			return false;
+		}
+		
+		if (amountInDouble >= 1 && wholeAmount.charAt(0) == '0')
+			return false;
+		
+		if (amountInDouble < 0 || amountInDouble > 4294967295.99) {
+			return false;
+		}
+
+		return true;
+	}
+	
 }

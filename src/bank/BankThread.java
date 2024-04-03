@@ -3,6 +3,7 @@ package bank;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Locale;
 import java.util.Map;
 
 import utils.RequestMessage;
@@ -70,7 +71,7 @@ public class BankThread extends Thread {
 							out.writeObject("ACCOUNT_DOESNT_EXIST"); //This one still sends a string so we can send the 
 																	 //currentBalance as a string too
 						}
-						out.writeObject(String.valueOf(currentBalance));
+						out.writeObject(String.format(Locale.ROOT, "%.2f", currentBalance));
 						break;
 				}
 			} catch (Exception e) {

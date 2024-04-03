@@ -1,5 +1,7 @@
 import java.net.Socket;
+import java.text.DecimalFormat;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import atm.AtmStub;
@@ -14,6 +16,7 @@ public class ATMClient {
 	private static final int RETURN_VALUE_INVALID = 255;  
 	
 	public static void main(String[] args) {
+		Locale.setDefault(new Locale("en", "US"));
 		
 		Map<String, String> finalArgs = new HashMap<>();
 		
@@ -31,9 +34,27 @@ public class ATMClient {
 		
 		finalArgs = processArgs(args, finalArgs);
 		
+		if (!Utils.verifyAccountName(finalArgs.get("Account"))) 
+			System.exit(RETURN_VALUE_INVALID);
+		
+		if (finalArgs.get("AuthFile") != null && !Utils.verifyFileNames(finalArgs.get("AuthFile"))) 
+			System.exit(RETURN_VALUE_INVALID);
+		
+		if (finalArgs.get("CardFile") != null && !Utils.verifyFileNames(finalArgs.get("CardFile"))) 
+			System.exit(RETURN_VALUE_INVALID);	
+		
+		if (finalArgs.get("Amount") != null && !Utils.verifyAmount(finalArgs.get("Amount"))) 
+			System.exit(RETURN_VALUE_INVALID);
+			
+		if (finalArgs.get("BankPort") != null && !Utils.verifyPort(finalArgs.get("BankPort"))) 
+			System.exit(RETURN_VALUE_INVALID);
+		
 		if (finalArgs.get("BankIP") == null) {
 			finalArgs.put("BankIP", "127.0.0.1");
 		}
+		
+		if (!Utils.verifyIPAddress(finalArgs.get("BankIP"))) 
+			System.exit(RETURN_VALUE_INVALID);
 		
 		int bankPort;
 		try {
@@ -45,8 +66,7 @@ public class ATMClient {
 		Socket bankSocket = connectToServerSocket(finalArgs.get("BankIP"), bankPort);
 		AtmStub atmStub = new AtmStub(bankSocket);
 		
-		
-		double amount = 0.0;
+		double amount = 0.00;
 		int result = 0;
 		RequestMessage request = null;
 		switch(finalArgs.get("Functionality")) {
@@ -117,8 +137,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
-					if (!Utils.verifyAccountName(args[i+1])) 
-						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("Account", args[i+1]);
 					i++;
 				}
@@ -126,8 +144,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
-					if (!Utils.verifyAccountName(restArg)) 
-						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("Account", restArg);
 				}
 			}
@@ -136,8 +152,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
-					if (!Utils.verifyFileNames(args[i+1])) 
-						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("AuthFile", args[i+1]);
 					i++;
 				}
@@ -145,8 +159,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
-					if (!Utils.verifyFileNames(restArg)) 
-						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("AuthFile", restArg);
 				}
 			}
@@ -155,9 +167,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
-					if(!Utils.verifyIPAddress(args[i+1])) {
-						System.exit(RETURN_VALUE_INVALID);
-					}
 					finalArgs.put("BankIP", args[i+1]);
 					i++;
 				}
@@ -165,9 +174,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
-					if(!Utils.verifyIPAddress(restArg)) {
-						System.exit(RETURN_VALUE_INVALID);
-					}
 					finalArgs.put("BankIP", restArg);
 				}
 			}
@@ -176,9 +182,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
-					if(!Utils.verifyPort(args[i+1])) {
-						System.exit(RETURN_VALUE_INVALID);
-					}
 					finalArgs.put("BankPort", args[i+1]);
 					i++;
 				}
@@ -186,9 +189,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
-					if(!Utils.verifyPort(restArg)) {
-						System.exit(RETURN_VALUE_INVALID);
-					}
 					finalArgs.put("BankPort", restArg);
 				}
 			}
@@ -197,8 +197,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
-					if (!Utils.verifyFileNames(args[i+1])) 
-						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("CardFile", args[i+1]);
 					i++;
 				}
@@ -206,8 +204,6 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
-					if (!Utils.verifyFileNames(restArg)) 
-						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("CardFile", restArg);
 				}
 			}
@@ -218,7 +214,6 @@ public class ATMClient {
 				}
 				finalArgs.put("Functionality", "CREATE_ACCOUNT");
 				if (restArg == null && i+1 < args.length) {
-					System.out.println("a");
 					finalArgs.put("Amount", args[i+1]);
 					i++;
 				}

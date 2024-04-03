@@ -58,4 +58,15 @@ public class Utils {
 		return true;
 	}
 	
+	public static boolean verifyAccountName(String fileName) {
+		if(fileName.length() < 1 || fileName.length() > 122) 
+			return false; 
+		
+		for(String c : fileName.split("")) {
+			if(!c.matches("[_\\-\\.0-9a-z]")) 
+				return false;
+		}
+		return true;
+	}
+	
 }

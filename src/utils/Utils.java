@@ -48,21 +48,21 @@ public class Utils {
 	}
 	
 	public static boolean verifyFileNames(String fileName) {
-		if(fileName.length() < 1 || fileName.length() > 127 || fileName.equals(".") || fileName.equals("..")) 
+		if (fileName.length() < 1 || fileName.length() > 127 || fileName.equals(".") || fileName.equals("..")) 
 			return false; 
 		
 		for(String c : fileName.split("")) {
-			if(!c.matches("[_\\-\\.0-9a-z]")) 
+			if (!c.matches("[_\\-\\.0-9a-z]")) 
 				return false;
 		}
 		return true;
 	}
 	
 	public static boolean verifyAccountName(String fileName) {
-		if(fileName.length() < 1 || fileName.length() > 122) 
+		if (fileName.length() < 1 || fileName.length() > 122) 
 			return false; 
 		
-		for(String c : fileName.split("")) {
+		for (String c : fileName.split("")) {
 			if(!c.matches("[_\\-\\.0-9a-z]")) 
 				return false;
 		}
@@ -71,10 +71,10 @@ public class Utils {
 	
 	public static boolean verifyIPAddress(String ipAddress) {
 		String[] addressSeparated = ipAddress.split("\\."); 	
-		if(addressSeparated.length != 4) 
+		if (addressSeparated.length != 4) 
 			return false;
 		
-		for(String ipNumber : addressSeparated) {
+		for (String ipNumber : addressSeparated) {
 			int num;
 			try {
 				num = Integer.parseInt(ipNumber);

@@ -14,6 +14,7 @@ import java.io.IOException;
 public class ATMClient {
 	
 	private static final int RETURN_VALUE_INVALID = 255;  
+	private static final int RETURN_CONNECTION_ERROR = 63;  
 	
 	public static void main(String[] args) {
 		Locale.setDefault(new Locale("en", "US"));
@@ -114,6 +115,7 @@ public class ATMClient {
 			socket = new Socket(bankIP, bankPort);
 		} catch (IOException e) {
 			e.printStackTrace();
+			System.exit(RETURN_CONNECTION_ERROR);
 		}
 		return socket;
 	}

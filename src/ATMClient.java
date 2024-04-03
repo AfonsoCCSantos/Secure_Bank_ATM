@@ -95,7 +95,7 @@ public class ATMClient {
 		try {
 			bankSocket.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		System.exit(result);
 	}

@@ -69,4 +69,22 @@ public class Utils {
 		return true;
 	}
 	
+	public static boolean verifyIPAddress(String ipAddress) {
+		String[] addressSeparated = ipAddress.split("\\."); 	
+		if(addressSeparated.length != 4) 
+			return false;
+		
+		for(String ipNumber : addressSeparated) {
+			int num;
+			try {
+				num = Integer.parseInt(ipNumber);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+			if(num < 0 || num > 255)
+				return false;
+		}
+		return true;
+	}
+	
 }

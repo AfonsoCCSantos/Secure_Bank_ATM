@@ -126,7 +126,7 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
-					if (!Utils.verifyFileNames(restArg)) 
+					if (!Utils.verifyAccountName(restArg)) 
 						System.exit(RETURN_VALUE_INVALID);
 					finalArgs.put("Account", restArg);
 				}
@@ -155,6 +155,9 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				if (restArg == null && i+1 < args.length) {
+					if(!Utils.verifyIPAddress(args[i+1])) {
+						System.exit(RETURN_VALUE_INVALID);
+					}
 					finalArgs.put("BankIP", args[i+1]);
 					i++;
 				}
@@ -162,6 +165,9 @@ public class ATMClient {
 					System.exit(RETURN_VALUE_INVALID);
 				}
 				else {
+					if(!Utils.verifyIPAddress(restArg)) {
+						System.exit(RETURN_VALUE_INVALID);
+					}
 					finalArgs.put("BankIP", restArg);
 				}
 			}

@@ -4,17 +4,23 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 public class Utils {
+	
+	private static final int RETURN_VALUE_INVALID = 255; 
+	private static final int RETURN_CONNECTION_ERROR = 63;  
 	
 	public static ObjectOutputStream gOutputStream(Socket socket) {
         ObjectOutputStream outStream = null;
         try {
             outStream = new ObjectOutputStream(socket.getOutputStream());
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (SocketTimeoutException e) {
+			Utils.printAndFlush("protocol_error\n");
+			System.exit(RETURN_CONNECTION_ERROR);
+        } catch (Exception e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
         return outStream;
     }
 	
@@ -22,10 +28,13 @@ public class Utils {
         ObjectInputStream inStream = null;
         try {
             inStream = new ObjectInputStream(socket.getInputStream());
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (SocketTimeoutException e) {
+			Utils.printAndFlush("protocol_error\n");
+			System.exit(RETURN_CONNECTION_ERROR);
+        } catch (Exception e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
+		
         return inStream;
     }
 	

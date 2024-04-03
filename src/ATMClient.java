@@ -3,6 +3,7 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import atm.AtmStub;
 import utils.RequestMessage;
@@ -113,6 +114,7 @@ public class ATMClient {
 		Socket socket = null;
 		try {
 			socket = new Socket(bankIP, bankPort);
+			socket.setSoTimeout(10000);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(RETURN_CONNECTION_ERROR);

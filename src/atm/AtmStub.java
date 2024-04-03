@@ -1,6 +1,7 @@
 package atm;
 
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -19,6 +20,7 @@ import java.io.IOException;
 public class AtmStub {
 	
 	private static final int RETURN_VALUE_INVALID = 255; 
+	private static final int RETURN_CONNECTION_ERROR = 63;  
 	private static final double BALANCE_INFERIOR_LIMIT = 10.0; 
 	
 	private ObjectInputStream inFromServer;
@@ -46,10 +48,12 @@ public class AtmStub {
 			
 			ResponseMessage createAccountResult = (ResponseMessage) inFromServer.readObject();
 			if(createAccountResult.equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) return RETURN_VALUE_INVALID;
-						
-		} catch(IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+		} catch(SocketTimeoutException e) {
+			System.exit(RETURN_CONNECTION_ERROR);
+		} catch(Exception e) {
+			System.exit(RETURN_VALUE_INVALID);
 		}
+		
 		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"initial_balance\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
 		//create card file
 		createCardFile(request.getCardFile());
@@ -68,8 +72,10 @@ public class AtmStub {
 			
 			ResponseMessage depositResult = (ResponseMessage) inFromServer.readObject();
 			if(depositResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) return RETURN_VALUE_INVALID;
-		} catch(IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+		} catch(SocketTimeoutException e) {
+			System.exit(RETURN_CONNECTION_ERROR);	
+		} catch(Exception e) {
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
 		return 0;
@@ -87,8 +93,10 @@ public class AtmStub {
 			ResponseMessage withdrawResult = (ResponseMessage) inFromServer.readObject();
 			if(withdrawResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) return RETURN_VALUE_INVALID;
 			if(withdrawResult.equals(ResponseMessage.NEGATIVE_BALANCE)) return RETURN_VALUE_INVALID;
-		} catch(IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+		} catch(SocketTimeoutException e) {
+			System.exit(RETURN_CONNECTION_ERROR);
+		} catch(Exception e) {
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"withdraw\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
 		return 0;
@@ -104,8 +112,10 @@ public class AtmStub {
 			//receive result from bank
 			result = (String) inFromServer.readObject();
 			if(result.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
-		} catch(IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+		} catch(SocketTimeoutException e) {
+			System.exit(RETURN_CONNECTION_ERROR);
+		} catch(Exception e) {
+			System.exit(RETURN_VALUE_INVALID);
 		}
 
 		//print account and amount

@@ -42,8 +42,6 @@ public class BankServer {
 			finalArgs.put("AuthFile", DEFAULT_AUTH_FILE);
 		}
 		
-		
-		
 		Path path = Paths.get(finalArgs.get("AuthFile"));
 		if (Files.exists(path)) {
 			System.exit(RETURN_VALUE_INVALID);

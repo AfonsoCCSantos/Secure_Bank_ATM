@@ -99,8 +99,6 @@ public class Utils {
 		String wholeAmount = amountSeparated[0];
 		String fractionalPart = amountSeparated[1];
 		
-		
-		
 		if (fractionalPart.length() != 2)
 			return false;
 			

@@ -114,7 +114,7 @@ public class AtmStub {
 	}
 	
 	private static void createCardFile(String cardFileName) {
-		Utils.printAndFlush("Card file created.");
+		Utils.printAndFlush("Card file created.\n");
 	}
 	
 	

@@ -55,6 +55,14 @@ public class ATMClient {
 			finalArgs.put("BankIP", "127.0.0.1");
 		}
 		
+		if (finalArgs.get("AuthFile") == null) {
+			finalArgs.put("AuthFile", "bank.auth");
+		}
+		
+		if (finalArgs.get("CardFile") == null) {
+			finalArgs.put("CardFile", finalArgs.get("Account") + ".card");
+		}
+		
 		if (!Utils.verifyIPAddress(finalArgs.get("BankIP"))) 
 			System.exit(RETURN_VALUE_INVALID);
 		

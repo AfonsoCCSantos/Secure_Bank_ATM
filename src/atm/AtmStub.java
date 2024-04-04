@@ -2,6 +2,7 @@ package atm;
 
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -12,10 +13,11 @@ import utils.Utils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DecimalFormat;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.KeyPair;
 import java.util.Locale;
-import java.io.IOException;
-
 
 public class AtmStub {
 	
@@ -25,7 +27,7 @@ public class AtmStub {
 	
 	private ObjectInputStream inFromServer;
 	private ObjectOutputStream outToServer;
-	
+	private PrivateKey privateKey;
 	
 	public AtmStub(Socket bankSocket) {
 		this.outToServer = Utils.gOutputStream(bankSocket);
@@ -34,10 +36,21 @@ public class AtmStub {
 	
 	public int createAccount(RequestMessage request) {
 		//verify if card file is unique
-//		Path path = Paths.get(cardFileName);
-//		if (Files.exists(path)) {
-//			return RETURN_VALUE_INVALID;
-//		}
+		System.out.println(request.getCardFile());
+		Path path = Paths.get(request.getCardFile());
+		if (Files.exists(path)) {
+			return RETURN_VALUE_INVALID;
+		}
+
+		try {
+			KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+			kpg.initialize(2048);
+			KeyPair kp = kpg.generateKeyPair();
+			privateKey = kp.getPrivate();
+			createCardFile(request.getCardFile(),kp);
+		} catch (NoSuchAlgorithmException e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
 		
 		if (request.getValue() < BALANCE_INFERIOR_LIMIT) {
 			return RETURN_VALUE_INVALID;
@@ -45,7 +58,6 @@ public class AtmStub {
 		
 		try {
 			outToServer.writeObject(request);
-			
 			ResponseMessage createAccountResult = (ResponseMessage) inFromServer.readObject();
 			if(createAccountResult.equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) return RETURN_VALUE_INVALID;
 		} catch(SocketTimeoutException e) {
@@ -55,8 +67,6 @@ public class AtmStub {
 		}
 		
 		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"initial_balance\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
-		//create card file
-		createCardFile(request.getCardFile());
 		return 0;
 	}
 
@@ -66,7 +76,6 @@ public class AtmStub {
 		} 
 
 		//verify cardFile is associated to account
-
 		try {
 			outToServer.writeObject(request);
 			
@@ -123,7 +132,12 @@ public class AtmStub {
 		return 0;
 	}
 	
-	private static void createCardFile(String cardFileName) {
+	private static void createCardFile(String cardFileName, KeyPair kp) {
+		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(cardFileName))) {
+			oos.writeObject(kp);
+		} catch (IOException e) {
+			System.exit(RETURN_VALUE_INVALID);
+		} 
 		Utils.printAndFlush("Card file created.\n");
 	}
 	

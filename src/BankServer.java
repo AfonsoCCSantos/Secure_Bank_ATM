@@ -1,6 +1,3 @@
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,8 +12,9 @@ import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Base64;
 import java.util.Locale;
+import java.io.ObjectOutputStream;
+import java.io.FileOutputStream;
 
 
 import bank.BankThread;
@@ -109,8 +107,8 @@ public class BankServer {
 	}
 	
 	private static void createAuthFile(String authFileName, PublicKey publicKey) {
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter(authFileName))) {
-			writer.write(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
+		try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(authFileName))) {
+			oos.writeObject(publicKey);
 			Utils.printAndFlush("created\n");
 		} catch (IOException e) {
 			System.exit(RETURN_VALUE_INVALID);

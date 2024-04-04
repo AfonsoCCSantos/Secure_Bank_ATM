@@ -1,15 +1,23 @@
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyPairGenerator;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Base64;
 import java.util.Locale;
+
 
 import bank.BankThread;
 import utils.Utils;
@@ -20,6 +28,7 @@ public class BankServer {
 	private static final int RETURN_VALUE_INVALID = 255;  
 	private static final String DEFAULT_AUTH_FILE = "bank.auth";
 	private static Map<String, Double> accounts;
+	private static PrivateKey privateKey;
 	
 	public static void main(String[] args) {
 		Locale.setDefault(new Locale("en", "US"));
@@ -47,7 +56,17 @@ public class BankServer {
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
-		createAuthFile(finalArgs.get("AuthFile"));
+		try {
+			KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+			kpg.initialize(2048);
+			KeyPair kp = kpg.generateKeyPair();
+			privateKey = kp.getPrivate();
+			createAuthFile(finalArgs.get("AuthFile"), kp.getPublic());
+		} catch (NoSuchAlgorithmException e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
+		
+		
 		System.out.println("Auth file created");
 		System.out.flush();
 		
@@ -60,7 +79,7 @@ public class BankServer {
 				BankThread newServerThread = new BankThread(inSocket, accounts);
 				newServerThread.start();
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.exit(RETURN_VALUE_INVALID);
 			}
 		}
 	}
@@ -89,9 +108,13 @@ public class BankServer {
 		return serverSocket;
 	}
 	
-	private static void createAuthFile(String authFileName) {
-		System.out.println("Created");
-		System.out.flush();
+	private static void createAuthFile(String authFileName, PublicKey publicKey) {
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(authFileName))) {
+			writer.write(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
+			Utils.printAndFlush("created\n");
+		} catch (IOException e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
 	}
 
 	private static void getArgs(String[] args, Map<String, String> finalArgs) {

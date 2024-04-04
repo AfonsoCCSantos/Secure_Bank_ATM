@@ -20,9 +20,9 @@ public class BankThread extends Thread {
 	private static final int NEGATIVE_BALANCE = -4;
 	private static final int RETURN_CONNECTION_ERROR = 63;  
 	private Socket socket;
-	private Map<String, Double> accounts;
+	private Map<String, BankAccount> accounts;
 
-	public BankThread(Socket socket, Map<String, Double> accounts) {
+	public BankThread(Socket socket, Map<String, BankAccount> accounts) {
 		super();
 		this.socket = socket;
 		this.accounts = accounts;

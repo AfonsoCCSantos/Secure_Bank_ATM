@@ -4,7 +4,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import utils.Utils;
 
@@ -12,9 +11,9 @@ public class BankSkel {
 	
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
-	private Map<String, Double> accounts;
+	private Map<String, BankAccount> accounts;
 	
-	public BankSkel(ObjectInputStream in, ObjectOutputStream out, Map<String, Double> accounts) {
+	public BankSkel(ObjectInputStream in, ObjectOutputStream out, Map<String, BankAccount> accounts) {
 		super();
 		this.in = in;
 		this.out = out;
@@ -24,8 +23,9 @@ public class BankSkel {
 	public int createAccount(String accountName, double balance) {
 		if (accounts.get(accountName) != null) return -2;
 		
+		BankAccount bankAccount = new BankAccount(balance, null); //put here publicKey
 		synchronized (accounts) {
-			accounts.put(accountName, balance);
+			accounts.put(accountName, bankAccount);
 		}
 		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"initial_balance\":" + String.format(Locale.ROOT, "%.2f", balance) + "}\n");
 		return 0;
@@ -35,7 +35,8 @@ public class BankSkel {
 		if (accounts.get(accountName) == null) return -3;
 		
 		synchronized (accounts) {
-			accounts.put(accountName, accounts.get(accountName) + amount);
+			BankAccount bankAccount = accounts.get(accountName);
+			bankAccount.deposit(amount);
 		}
 
 		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"deposit\":" + String.format(Locale.ROOT, "%.2f", amount) + "}\n");
@@ -46,9 +47,9 @@ public class BankSkel {
 		if (accounts.get(accountName) == null) return -3;
 		
 		synchronized (accounts) {
-			double remainingAmount = accounts.get(accountName) - amount;
-			if(remainingAmount < 0) return -4; 
-			accounts.put(accountName, remainingAmount);
+			BankAccount bankAccount = accounts.get(accountName);
+			int result = bankAccount.withdraw(amount);
+			if (result == -1) return -4;
 		}
 		
 		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"withdraw\":" + String.format(Locale.ROOT, "%.2f", amount) + "}\n");
@@ -60,7 +61,7 @@ public class BankSkel {
 		double amount = 0;
 		
 		synchronized (accounts) {
-			amount = accounts.get(accountName);
+			amount = accounts.get(accountName).getAccountValue();
 		}
 		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"balance\":" + String.format(Locale.ROOT, "%.2f", amount) + "}\n");
 		return amount;

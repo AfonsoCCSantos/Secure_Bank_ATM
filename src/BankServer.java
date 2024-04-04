@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.io.ObjectOutputStream;
 import java.io.FileOutputStream;
 
-
+import bank.BankAccount;
 import bank.BankThread;
 import utils.Utils;
 
@@ -25,14 +25,14 @@ public class BankServer {
 	private static final String DEFAULT_BANK_PORT = "3000";
 	private static final int RETURN_VALUE_INVALID = 255;  
 	private static final String DEFAULT_AUTH_FILE = "bank.auth";
-	private static Map<String, Double> accounts;
+	private static Map<String, BankAccount> accounts;
 	private static PrivateKey privateKey;
 	
 	public static void main(String[] args) {
 		Locale.setDefault(new Locale("en", "US"));
 		ServerSocket serverSocket = null;
 		addSigtermHook(serverSocket);
-		accounts = new HashMap<String, Double>();
+		accounts = new HashMap<String, BankAccount>();
 		Scanner sc = new Scanner(System.in);
 		Map<String, String> finalArgs = new HashMap<String, String>();
 		

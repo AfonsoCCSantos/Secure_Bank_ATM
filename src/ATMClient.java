@@ -1,4 +1,5 @@
 import java.net.Socket;
+import java.security.PublicKey;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Locale;
@@ -10,7 +11,9 @@ import utils.RequestMessage;
 import utils.RequestType;
 import utils.Utils;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 
 public class ATMClient {
 	
@@ -73,8 +76,10 @@ public class ATMClient {
 			bankPort = 3000;
 		}
 		
+		PublicKey bankPublicKey = getBankPublicKey(finalArgs.get("AuthFile"));
+		
 		Socket bankSocket = connectToServerSocket(finalArgs.get("BankIP"), bankPort);
-		AtmStub atmStub = new AtmStub(bankSocket);
+		AtmStub atmStub = new AtmStub(bankSocket, bankPublicKey);
 		
 		double amount = 0.00;
 		int result = 0;
@@ -83,7 +88,7 @@ public class ATMClient {
 				case "CREATE_ACCOUNT":
 					amount = getAmountInDouble(finalArgs);
 					request = new RequestMessage(RequestType.CREATE_ACCOUNT, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
-					result = atmStub.createAccount(request);
+					result = atmStub.createAccount(request, finalArgs.get("Account"));
 					break;
 				case "DEPOSIT":
 					amount = getAmountInDouble(finalArgs);
@@ -290,6 +295,16 @@ public class ATMClient {
 		}
 		
 		return finalArgs;
+	}
+	
+	private static PublicKey getBankPublicKey(String authFileName) {
+		PublicKey publicKey = null;
+		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(authFileName))) {
+			publicKey = (PublicKey) ois.readObject();
+		} catch (Exception e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
+		return publicKey;
 	}
 	
 

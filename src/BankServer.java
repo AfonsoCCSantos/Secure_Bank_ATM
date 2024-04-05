@@ -60,13 +60,10 @@ public class BankServer {
 			KeyPair kp = kpg.generateKeyPair();
 			privateKey = kp.getPrivate();
 			createAuthFile(finalArgs.get("AuthFile"), kp.getPublic());
+			Utils.printAndFlush("Auth file created");
 		} catch (NoSuchAlgorithmException e) {
 			System.exit(RETURN_VALUE_INVALID);
 		}
-		
-		
-		System.out.println("Auth file created");
-		System.out.flush();
 		
 		serverSocket = initialiseSocket(Integer.parseInt(finalArgs.get("port")));
 		
@@ -74,7 +71,7 @@ public class BankServer {
 			Socket inSocket;
 			try {
 				inSocket = serverSocket.accept();
-				BankThread newServerThread = new BankThread(inSocket, accounts);
+				BankThread newServerThread = new BankThread(inSocket, accounts, privateKey);
 				newServerThread.start();
 			} catch (IOException e) {
 				System.exit(RETURN_VALUE_INVALID);

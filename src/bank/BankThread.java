@@ -166,6 +166,7 @@ public class BankThread extends Thread {
 						out.writeObject(encryptedBytes);
 						messageCounter++;
 						break;
+						
 					case DEPOSIT:
 						byte[] accountNameMsgBytes = (byte[]) in.readObject();
 						MessageSequence accountNameMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(accountNameMsgBytes, privateKey);
@@ -185,7 +186,7 @@ public class BankThread extends Thread {
 						if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return;
 						messageCounter++;
 						clientDHPublicKey = receivedPublicKeyDHmessage.getMessage();
-				        
+						
 						//Send DH PublicKey to ATM
 				        dhPublicKeyMsg = new MessageSequence(serverPublicKey, messageCounter);
 				        out.writeObject(dhPublicKeyMsg);
@@ -203,7 +204,7 @@ public class BankThread extends Thread {
 				        //Receive the secret key hash from atm
 				        byte[] secretKeyHashMsg = (byte[]) in.readObject();
 				        MessageSequence hashMessage = (MessageSequence) Utils.deserializeData(secretKeyHashMsg);
-				        if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return;
+				        if (hashMessage.getCounter() != messageCounter) return;
 				        messageCounter++;
 				        byte[] secretKeyHashFromAtm = hashMessage.getMessage();
 				        
@@ -227,26 +228,25 @@ public class BankThread extends Thread {
 				        out.writeObject(hashToSend);
 				        messageCounter++;
 				        
-				        System.out.println("OLA");
+				        //From this moment the secretShared key is established
 				        
+				        //Server receives value to deposit encrypted from client
+				        byte[] valueMessageEncrypted = (byte[]) in.readObject();
+				        MessageSequence valueMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(valueMessageEncrypted, secretKey);
+				        if (valueMessageSequence.getCounter() != messageCounter) return;
+				        messageCounter++;
 				        
-				        
-				        
-				        
-				        
-						
-						
-						
-						
-						
-//						returnCode = bankSkel.deposit(request.getAccount(), request.getValue());
-//						if (returnCode == ACCOUNT_DOESNT_EXIST) {
-//							out.writeObject(ResponseMessage.ACCOUNT_DOESNT_EXIST);
-//						}
-//						else if (returnCode == SUCCESS) {
-//							out.writeObject(ResponseMessage.SUCCESS);
-//						}
+				        //Bank sends result of operation to client
+						returnCode = bankSkel.deposit(accountName, (double) Utils.deserializeData(valueMessageSequence.getMessage()));
+						operationResultMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
+						if (returnCode == ACCOUNT_DOESNT_EXIST) {
+							operationResultMessage.setMessage(Utils.serializeData(ResponseMessage.ACCOUNT_DOESNT_EXIST));
+						}
+						encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(operationResultMessage), secretKey);
+						out.writeObject(encryptedBytes);
+						messageCounter++;
 						break;
+						
 					case WITHDRAW:
 //						returnCode = bankSkel.withdraw(request.getAccount(), request.getValue());
 //						if (returnCode == ACCOUNT_DOESNT_EXIST) {

@@ -237,7 +237,7 @@ public class AtmStub {
 	        md.update(secretKey.getEncoded());
 	        byte[] hashBytes = md.digest();
 	        MessageSequence messageSequence = new MessageSequence(hashBytes, messageCounter); 
-	        outToServer.writeObject(messageSequence);
+	        outToServer.writeObject(Utils.serializeData(messageSequence));
 	        messageCounter++;
 	        
 	        //Calculate hash of shared key + Bank PublicKey
@@ -251,28 +251,10 @@ public class AtmStub {
 	        
 	        //Receive hash of shared key + Bank PublicKey from server and confirm hash
 	        MessageSequence receivedHashmessage = (MessageSequence) inFromServer.readObject();
-			if (receivedPublicKeyDHmessage.getCounter() != messageCounter || 
-				Arrays.equals(hashSecretKeyBankPublicKey, receivedHashmessage.getMessage())) 
+			if (receivedHashmessage.getCounter() != messageCounter || 
+				!Arrays.equals(hashSecretKeyBankPublicKey, receivedHashmessage.getMessage())) 
 				return RETURN_VALUE_INVALID;
 			messageCounter++;
-			
-			
-			
-			System.out.println("OLA");
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
 			
 			//From this moment the secretShared key is established
 			
@@ -288,6 +270,7 @@ public class AtmStub {
 			if(resultMessageSequence.getCounter() != messageCounter || 
 				Utils.deserializeData(resultMessageSequence.getMessage()).equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) 
 				return RETURN_VALUE_INVALID;
+			
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);	
 		} catch(Exception e) {

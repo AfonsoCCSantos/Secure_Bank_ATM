@@ -45,14 +45,16 @@ public class ATMClient {
 		if (finalArgs.get("AuthFile") != null && !Utils.verifyFileNames(finalArgs.get("AuthFile"))) 
 			System.exit(RETURN_VALUE_INVALID);
 		
+		
 		if (finalArgs.get("CardFile") != null && !Utils.verifyFileNames(finalArgs.get("CardFile"))) 
 			System.exit(RETURN_VALUE_INVALID);	
 		
 		if (finalArgs.get("Amount") != null && !Utils.verifyAmount(finalArgs.get("Amount"))) 
 			System.exit(RETURN_VALUE_INVALID);
-			
+		
 		if (finalArgs.get("BankPort") != null && !Utils.verifyPort(finalArgs.get("BankPort"))) 
 			System.exit(RETURN_VALUE_INVALID);
+		
 		
 		if (finalArgs.get("BankIP") == null) {
 			finalArgs.put("BankIP", "127.0.0.1");
@@ -65,6 +67,7 @@ public class ATMClient {
 		if (finalArgs.get("CardFile") == null) {
 			finalArgs.put("CardFile", finalArgs.get("Account") + ".card");
 		}
+		
 		
 		if (!Utils.verifyIPAddress(finalArgs.get("BankIP"))) 
 			System.exit(RETURN_VALUE_INVALID);

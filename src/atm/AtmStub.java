@@ -20,8 +20,15 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.util.Arrays;
 import java.util.Locale;
+
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 public class AtmStub {
 	
@@ -96,21 +103,79 @@ public class AtmStub {
 			
 			MessageSequence messageReceived = (MessageSequence) inFromServer.readObject(); //Think whether it makes sense to encrypt
 			ResponseMessage responseMessage = (ResponseMessage) Utils.deserializeData(messageReceived.getMessage());
-			System.out.println(responseMessage);
 			
-//			if (messageReceived.getCounter() != messageCounter || responseMessage.equals(ResponseMessage.AUTHENTICATION_FAILURE)) 
-//				return RETURN_VALUE_INVALID;
-//			messageCounter++;
+			if (messageReceived.getCounter() != messageCounter || responseMessage.equals(ResponseMessage.AUTHENTICATION_FAILURE)) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			//Generate nonce and send it to bank - bank has to authenticate
+			byte[] nonce = EncryptionUtils.generateNonce(32);
+			MessageSequence nonceMessage = new MessageSequence(nonce, messageCounter);
+			byte[] encryptedNonceMessage = EncryptionUtils.rsaEncrypt(Utils.serializeData(nonceMessage), bankPublicKey);
+			outToServer.writeObject(encryptedNonceMessage);
+			messageCounter++;
+			
+			//Receive nonce back from the bank
+			byte[] receivedNonceBytes = (byte[]) inFromServer.readObject();
+			MessageSequence receivedNonceMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(receivedNonceBytes, privateKey);
+			if (receivedNonceMessage.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			if (!Arrays.equals(nonce, receivedNonceMessage.getMessage())) {
+				MessageSequence returnMessage = new MessageSequence(Utils.serializeData(ResponseMessage.AUTHENTICATION_FAILURE), messageCounter);
+				outToServer.writeObject(returnMessage); //Think whether it makes sense to encrypt
+				return RETURN_VALUE_INVALID;
+			}
+			MessageSequence returnMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
+			outToServer.writeObject(returnMessage);
+			messageCounter++;
 			
 			// Authentication completed
 			
-			//encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(account), bankPublicKey);
-			//outToServer.writeObject(encryptedBytes);
+			//Start of Diffie Hellman
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
+	        keyPairGenerator.initialize(2048);
+	        KeyPair clientKeyPair = keyPairGenerator.generateKeyPair();
+	        
+	        byte[] clientPublicKey = clientKeyPair.getPublic().getEncoded();
+	        
+	        //Client receives publicKey DH of server
+			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) inFromServer.readObject();
+			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
+			messageCounter++;
+			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
 			
+			//Client sends its DH publicKey to server
+			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
+	        outToServer.writeObject(messageDhPublicKey);
+	        messageCounter++;
+	        
+	        KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
+	        keyAgreement.init(clientKeyPair.getPrivate());
+	        KeyFactory keyFactory = KeyFactory.getInstance("DH");
+	        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankDHPublicKey);
+	        PublicKey bankDHPKObject = keyFactory.generatePublic(x509KeySpec);
+	        keyAgreement.doPhase(bankDHPKObject, true);
+	        byte[] sharedSecret = keyAgreement.generateSecret();
+	        SecretKey secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
+	        
+	        //Here the client has a secret key to talk with the server
 			
+			//Client sends account and value encryoted to server
+			MessageSequence requestMessageSequence = new MessageSequence(Utils.serializeData(requestMessage), messageCounter);
+			encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(requestMessageSequence), secretKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
 			
-//			ResponseMessage createAccountResult = (ResponseMessage) inFromServer.readObject();
-//			if(createAccountResult.equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) return RETURN_VALUE_INVALID;
+			//Client receives final response from server
+			byte[] resultEncrypted = (byte[]) inFromServer.readObject();
+			MessageSequence resultMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(resultEncrypted, secretKey);
+			if(resultMessageSequence.getCounter() != messageCounter || 
+				Utils.deserializeData(resultMessageSequence.getMessage()).equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) 
+				return RETURN_VALUE_INVALID;
+
+			System.out.println("ola");
+			
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
 		} catch(Exception e) {

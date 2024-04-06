@@ -5,6 +5,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Key;
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 
 
 public class EncryptionUtils {
@@ -54,4 +55,40 @@ public class EncryptionUtils {
         secureRandom.nextBytes(nonce);
         return nonce;
     }
+	
+    
+	public static byte[] aesEncrypt(byte[] data, SecretKey key) {
+		byte[] encryptedBytes = null;
+		try {
+			Cipher cipher = Cipher.getInstance("AES");
+			cipher.init(Cipher.ENCRYPT_MODE, key);
+			encryptedBytes = cipher.doFinal(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return encryptedBytes;
+	}
+	
+	public static byte[] aesDecrypt(byte[] data, SecretKey key) {
+		byte[] decryptedBytes = null;
+		try {
+			Cipher cipher = Cipher.getInstance("AES");
+			cipher.init(Cipher.DECRYPT_MODE, key);
+			decryptedBytes = cipher.doFinal(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return decryptedBytes;
+	}
+	
+	public static Object aesDecryptAndDeserialize(byte[] encryptedData, SecretKey key) {
+		Object result = null;
+		try {
+			byte[] decryptedBytes = aesDecrypt(encryptedData,key);
+			result = (Object) Utils.deserializeData(decryptedBytes);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
 }

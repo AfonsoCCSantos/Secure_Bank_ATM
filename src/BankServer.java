@@ -27,6 +27,7 @@ public class BankServer {
 	private static final String DEFAULT_AUTH_FILE = "bank.auth";
 	private static Map<String, BankAccount> accounts;
 	private static PrivateKey privateKey;
+	private static PublicKey publicKey;
 	
 	public static void main(String[] args) {
 		Locale.setDefault(new Locale("en", "US"));
@@ -59,6 +60,7 @@ public class BankServer {
 			kpg.initialize(2048);
 			KeyPair kp = kpg.generateKeyPair();
 			privateKey = kp.getPrivate();
+			publicKey = kp.getPublic();
 			createAuthFile(finalArgs.get("AuthFile"), kp.getPublic());
 			Utils.printAndFlush("Auth file created");
 		} catch (NoSuchAlgorithmException e) {
@@ -71,7 +73,7 @@ public class BankServer {
 			Socket inSocket;
 			try {
 				inSocket = serverSocket.accept();
-				BankThread newServerThread = new BankThread(inSocket, accounts, privateKey);
+				BankThread newServerThread = new BankThread(inSocket, accounts, privateKey, publicKey);
 				newServerThread.start();
 			} catch (IOException e) {
 				System.exit(RETURN_VALUE_INVALID);

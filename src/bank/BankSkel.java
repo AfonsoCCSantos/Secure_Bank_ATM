@@ -2,6 +2,7 @@ package bank;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.PublicKey;
 import java.util.Locale;
 import java.util.Map;
 
@@ -20,10 +21,10 @@ public class BankSkel {
 		this.accounts = accounts;
 	}
 	
-	public int createAccount(String accountName, double balance) {
+	public int createAccount(String accountName, double balance, PublicKey clientPublicKey) {
 		if (accounts.get(accountName) != null) return -2;
 		
-		BankAccount bankAccount = new BankAccount(balance, null); //put here publicKey
+		BankAccount bankAccount = new BankAccount(balance, clientPublicKey);
 		synchronized (accounts) {
 			accounts.put(accountName, bankAccount);
 		}

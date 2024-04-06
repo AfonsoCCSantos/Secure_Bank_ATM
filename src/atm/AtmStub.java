@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -173,8 +174,6 @@ public class AtmStub {
 			if(resultMessageSequence.getCounter() != messageCounter || 
 				Utils.deserializeData(resultMessageSequence.getMessage()).equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) 
 				return RETURN_VALUE_INVALID;
-
-			System.out.println("ola");
 			
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
@@ -186,23 +185,115 @@ public class AtmStub {
 		return 0;
 	}
 
-	public int depositAmount(RequestMessage request) {
-		if (request.getValue() <= 0) {
+	public int depositAmount(RequestMessage requestMessage) {
+		if (requestMessage.getValue() <= 0) {
 			return RETURN_VALUE_INVALID;
 		} 
+		
+		int messageCounter = 0;
 
-		//verify cardFile is associated to account
 		try {
-			outToServer.writeObject(request);
+			//Sending the request to the bank
+			MessageSequence requestTypeToSend = new MessageSequence(Utils.serializeData(requestMessage.getRequestType()), messageCounter);
+			byte[] encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(requestTypeToSend), bankPublicKey);
+			outToServer.writeObject(encryptedBytes); //SEND A DEPOSIT REQUEST TO SERVER
+			messageCounter++;
 			
-			ResponseMessage depositResult = (ResponseMessage) inFromServer.readObject();
-			if(depositResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) return RETURN_VALUE_INVALID;
+			//Sending the account to the bank
+			MessageSequence accountToSend = new MessageSequence(Utils.serializeData(requestMessage.getAccount()), messageCounter);
+			encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(accountToSend), bankPublicKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
+			
+			//Start of Diffie Hellman
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
+	        keyPairGenerator.initialize(2048);
+	        KeyPair clientKeyPair = keyPairGenerator.generateKeyPair();
+	        
+	        byte[] clientPublicKey = clientKeyPair.getPublic().getEncoded();
+	        
+	        //Sends its DH PublicKey to Server
+			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
+	        outToServer.writeObject(messageDhPublicKey);
+	        messageCounter++;
+	        
+			//Receives DH PublicKey of Server
+			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) inFromServer.readObject();
+			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
+			messageCounter++;
+			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
+			
+	        KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
+	        keyAgreement.init(clientKeyPair.getPrivate());
+	        KeyFactory keyFactory = KeyFactory.getInstance("DH");
+	        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankDHPublicKey);
+	        PublicKey bankDHPKObject = keyFactory.generatePublic(x509KeySpec);
+	        keyAgreement.doPhase(bankDHPKObject, true);
+	        byte[] sharedSecret = keyAgreement.generateSecret();
+	        SecretKey secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
+	        
+	       	//Obtain hash of shared key and sends it to server
+	        MessageDigest md = MessageDigest.getInstance("SHA3-256");
+	        md.update(secretKey.getEncoded());
+	        byte[] hashBytes = md.digest();
+	        MessageSequence messageSequence = new MessageSequence(hashBytes, messageCounter); 
+	        outToServer.writeObject(messageSequence);
+	        messageCounter++;
+	        
+	        //Calculate hash of shared key + Bank PublicKey
+	        byte[] secretKeywithBankPK = new byte[secretKey.getEncoded().length + bankPublicKey.getEncoded().length];
+	        System.arraycopy(secretKey.getEncoded(), 0, secretKeywithBankPK, 0, secretKey.getEncoded().length);
+	        System.arraycopy(bankPublicKey.getEncoded(), 0, secretKeywithBankPK, secretKey.getEncoded().length, bankPublicKey.getEncoded().length);
+	        
+	        md = MessageDigest.getInstance("SHA3-256");
+	        md.update(secretKeywithBankPK);
+	        byte[] hashSecretKeyBankPublicKey = md.digest();
+	        
+	        //Receive hash of shared key + Bank PublicKey from server and confirm hash
+	        MessageSequence receivedHashmessage = (MessageSequence) inFromServer.readObject();
+			if (receivedPublicKeyDHmessage.getCounter() != messageCounter || 
+				Arrays.equals(hashSecretKeyBankPublicKey, receivedHashmessage.getMessage())) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			
+			
+			System.out.println("OLA");
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			//From this moment the secretShared key is established
+			
+			//Client sends value to deposit encrypted to Server
+			MessageSequence valueMessageSequence = new MessageSequence(Utils.serializeData(requestMessage.getValue()), messageCounter);
+			encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(valueMessageSequence), secretKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
+	        
+	        //Client receives final response from server
+			byte[] resultEncrypted = (byte[]) inFromServer.readObject();
+			MessageSequence resultMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(resultEncrypted, secretKey);
+			if(resultMessageSequence.getCounter() != messageCounter || 
+				Utils.deserializeData(resultMessageSequence.getMessage()).equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) 
+				return RETURN_VALUE_INVALID;
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);	
 		} catch(Exception e) {
 			System.exit(RETURN_VALUE_INVALID);
 		}
-		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"deposit\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + requestMessage.getAccount() + "\",\"deposit\":" + String.format(Locale.ROOT, "%.2f",requestMessage.getValue()) + "}\n");
 		return 0;
 	}
 

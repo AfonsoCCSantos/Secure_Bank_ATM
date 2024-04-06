@@ -5,6 +5,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -35,13 +36,15 @@ public class BankThread extends Thread {
 	private Socket socket;
 	private Map<String, BankAccount> accounts;
 	private PrivateKey privateKey;
+	private PublicKey publicKey;
 	
 
-	public BankThread(Socket socket, Map<String, BankAccount> accounts, PrivateKey privateKey) {
+	public BankThread(Socket socket, Map<String, BankAccount> accounts, PrivateKey privateKey, PublicKey publicKey) {
 		super();
 		this.socket = socket;
 		this.accounts = accounts;
 		this.privateKey = privateKey;
+		this.publicKey = publicKey;
 	}
 	
 	public void run() {
@@ -151,7 +154,7 @@ public class BankThread extends Thread {
 						if(requestMessageSequence.getCounter() != messageCounter) 
 							return;
 						RequestMessage requestMessageReceived = (RequestMessage) Utils.deserializeData(requestMessageSequence.getMessage());
-						int returnCode = bankSkel.createAccount(requestMessageReceived.getAccount(), requestMessageReceived.getValue());
+						int returnCode = bankSkel.createAccount(requestMessageReceived.getAccount(), requestMessageReceived.getValue(), clientPublicKey);
 						messageCounter++;
 						
 						//Bank sends result of operation to client
@@ -162,10 +165,80 @@ public class BankThread extends Thread {
 						encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(operationResultMessage), secretKey);
 						out.writeObject(encryptedBytes);
 						messageCounter++;
-						
-						System.out.println("Fim da operação");
 						break;
 					case DEPOSIT:
+						byte[] accountNameMsgBytes = (byte[]) in.readObject();
+						MessageSequence accountNameMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(accountNameMsgBytes, privateKey);
+						if (accountNameMessage.getCounter() != messageCounter)
+							return;
+						messageCounter++;
+						String accountName = (String) Utils.deserializeData(accountNameMessage.getMessage());
+						
+						//Generate public key for DH
+					    keyPairGenerator = KeyPairGenerator.getInstance("DH");
+				        keyPairGenerator.initialize(2048);
+				        serverKeyPair = keyPairGenerator.generateKeyPair();
+				        serverPublicKey = serverKeyPair.getPublic().getEncoded();
+				        
+				        //Receive the DH PublicKey from the ATM
+				        receivedPublicKeyDHmessage = (MessageSequence) in.readObject();
+						if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return;
+						messageCounter++;
+						clientDHPublicKey = receivedPublicKeyDHmessage.getMessage();
+				        
+						//Send DH PublicKey to ATM
+				        dhPublicKeyMsg = new MessageSequence(serverPublicKey, messageCounter);
+				        out.writeObject(dhPublicKeyMsg);
+				        messageCounter++;
+				        
+				        keyAgreement = KeyAgreement.getInstance("DH");
+				        keyAgreement.init(serverKeyPair.getPrivate());
+				        keyFactory = KeyFactory.getInstance("DH");
+				        x509KeySpec = new X509EncodedKeySpec(clientDHPublicKey);
+				        clientDHPKObject = keyFactory.generatePublic(x509KeySpec);
+				        keyAgreement.doPhase(clientDHPKObject, true);
+				        sharedSecret = keyAgreement.generateSecret();
+				        secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
+				        
+				        //Receive the secret key hash from atm
+				        byte[] secretKeyHashMsg = (byte[]) in.readObject();
+				        MessageSequence hashMessage = (MessageSequence) Utils.deserializeData(secretKeyHashMsg);
+				        if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return;
+				        messageCounter++;
+				        byte[] secretKeyHashFromAtm = hashMessage.getMessage();
+				        
+				        //Calculate the hash myself
+				        MessageDigest md = MessageDigest.getInstance("SHA3-256");
+				        md.update(secretKey.getEncoded());
+				        byte[] hashBytes = md.digest();
+				        
+				        if (!Arrays.equals(hashBytes, secretKeyHashFromAtm)) return;
+				        
+				        //Calculate hash of public key plus secret key
+				        byte[] secretKeywithBankPK = new byte[secretKey.getEncoded().length + publicKey.getEncoded().length];
+				        System.arraycopy(secretKey.getEncoded(), 0, secretKeywithBankPK, 0, secretKey.getEncoded().length);
+				        System.arraycopy(publicKey.getEncoded(), 0, secretKeywithBankPK, secretKey.getEncoded().length, publicKey.getEncoded().length);
+				        
+				        md = MessageDigest.getInstance("SHA3-256");
+				        md.update(secretKeywithBankPK);
+				        byte[] hashSecretKeyBankPublicKey = md.digest();
+				        
+				        MessageSequence hashToSend = new MessageSequence(hashSecretKeyBankPublicKey, messageCounter);
+				        out.writeObject(hashToSend);
+				        messageCounter++;
+				        
+				        System.out.println("OLA");
+				        
+				        
+				        
+				        
+				        
+				        
+						
+						
+						
+						
+						
 //						returnCode = bankSkel.deposit(request.getAccount(), request.getValue());
 //						if (returnCode == ACCOUNT_DOESNT_EXIST) {
 //							out.writeObject(ResponseMessage.ACCOUNT_DOESNT_EXIST);

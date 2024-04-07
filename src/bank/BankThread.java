@@ -12,6 +12,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.crypto.KeyAgreement;
@@ -228,12 +229,37 @@ public class BankThread extends Thread {
 						messageCounter++;
 						break;
 					case GET_BALANCE:
-//						double currentBalance = bankSkel.getBalance(request.getAccount());
-//						if (currentBalance == ACCOUNT_DOESNT_EXIST) {
-//							out.writeObject("ACCOUNT_DOESNT_EXIST"); //This one still sends a string so we can send the 
-//																	 //currentBalance as a string too
-//						}
-//						out.writeObject(String.format(Locale.ROOT, "%.2f", currentBalance));
+						accountNameMsgBytes = (byte[]) in.readObject();
+						accountNameMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(accountNameMsgBytes, privateKey);
+						if (accountNameMessage.getCounter() != messageCounter)
+							return;
+						messageCounter++;
+						accountName = (String) Utils.deserializeData(accountNameMessage.getMessage());
+						
+						//Start of Diffie Hellman
+						secretKey = bankAuthenticationDH();
+						if(secretKey == null) return; 
+				        
+				        //From this moment the secretShared key is established
+						
+						//Bank sends result of operation to client
+						double currentBalance = bankSkel.getBalance(accountName);
+						operationResultMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
+						if (currentBalance == ACCOUNT_DOESNT_EXIST) {
+							operationResultMessage.setMessage(Utils.serializeData(ResponseMessage.ACCOUNT_DOESNT_EXIST));
+						}
+						encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(operationResultMessage), secretKey);
+						out.writeObject(encryptedBytes);
+						messageCounter++;
+						
+						// if account exists, bank sends balance encrypted to client
+						if (currentBalance != ACCOUNT_DOESNT_EXIST) {
+							String balanceString = String.format(Locale.ROOT, "%.2f", currentBalance);
+							MessageSequence balanceMessage = new MessageSequence(Utils.serializeData(balanceString), messageCounter);
+							encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(balanceMessage), secretKey);
+							out.writeObject(encryptedBytes);
+							messageCounter++;
+						}
 						break;
 				}
 			}

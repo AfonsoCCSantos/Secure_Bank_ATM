@@ -275,16 +275,44 @@ public class AtmStub {
 		return 0;
 	}
 
-	public int getBalance(RequestMessage request) {
-		String result = null;
-		//verify if account exists and get amount
-		//verify cardFile is associated to account
+	public int getBalance(RequestMessage requestMessage) {
+		String balance = null;
+		messageCounter = 0;
 		try {
-			outToServer.writeObject(request);
+			//Sending the request to the bank
+			MessageSequence requestTypeToSend = new MessageSequence(Utils.serializeData(requestMessage.getRequestType()), messageCounter);
+			byte[] encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(requestTypeToSend), bankPublicKey);
+			outToServer.writeObject(encryptedBytes); //SEND A GET_BALANCE REQUEST TO SERVER
+			messageCounter++;
 			
-			//receive result from bank
-			result = (String) inFromServer.readObject();
-			if(result.equals("ACCOUNT_DOESNT_EXIST")) return RETURN_VALUE_INVALID;
+			//Sending the account to the bank
+			MessageSequence accountToSend = new MessageSequence(Utils.serializeData(requestMessage.getAccount()), messageCounter);
+			encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(accountToSend), bankPublicKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
+			
+			//Start of Diffie Hellman
+			SecretKey secretKey = clientAuthenticationDH();
+			if(secretKey == null) return RETURN_VALUE_INVALID; 
+			
+			//From this moment the secretShared key is established
+			
+			//Client receives result of operation from server
+			byte[] resultEncrypted = (byte[]) inFromServer.readObject();
+			MessageSequence resultMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(resultEncrypted, secretKey);
+			ResponseMessage withdrawResult = (ResponseMessage) Utils.deserializeData(resultMessageSequence.getMessage());
+			if(resultMessageSequence.getCounter() != messageCounter || withdrawResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			
+			//If operation is a success, client receives balance from bank
+			byte[] balanceEncrypted = (byte[]) inFromServer.readObject();
+			MessageSequence balanceMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(balanceEncrypted, secretKey);
+			System.out.println("OLA");
+			if(balanceMessageSequence.getCounter() != messageCounter) 
+				return RETURN_VALUE_INVALID;
+			balance = (String) Utils.deserializeData(balanceMessageSequence.getMessage());
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
 		} catch(Exception e) {
@@ -292,7 +320,7 @@ public class AtmStub {
 		}
 
 		//print account and amount
-		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"balance\":" + result + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + requestMessage.getAccount() + "\",\"balance\":" + balance + "}\n");
 		return 0;
 	}
 	

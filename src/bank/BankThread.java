@@ -234,16 +234,79 @@ public class BankThread extends Thread {
 						break;
 						
 					case WITHDRAW:
-//						returnCode = bankSkel.withdraw(request.getAccount(), request.getValue());
-//						if (returnCode == ACCOUNT_DOESNT_EXIST) {
-//							out.writeObject(ResponseMessage.ACCOUNT_DOESNT_EXIST);
-//						}
-//						else if(returnCode == NEGATIVE_BALANCE) {
-//							out.writeObject(ResponseMessage.NEGATIVE_BALANCE);
-//						}
-//						else if (returnCode == SUCCESS) {
-//							out.writeObject(ResponseMessage.SUCCESS);
-//						}
+						accountNameMsgBytes = (byte[]) in.readObject();
+						accountNameMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(accountNameMsgBytes, privateKey);
+						if (accountNameMessage.getCounter() != messageCounter)
+							return;
+						messageCounter++;
+						accountName = (String) Utils.deserializeData(accountNameMessage.getMessage());
+						
+						//Generate public key for DH
+					    keyPairGenerator = KeyPairGenerator.getInstance("DH");
+				        keyPairGenerator.initialize(2048);
+				        serverKeyPair = keyPairGenerator.generateKeyPair();
+				        serverPublicKey = serverKeyPair.getPublic().getEncoded();
+				        
+				        //Receive the DH PublicKey from the ATM
+				        receivedPublicKeyDHmessage = (MessageSequence) in.readObject();
+						if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return;
+						messageCounter++;
+						clientDHPublicKey = receivedPublicKeyDHmessage.getMessage(); 
+						
+						//Send DH PublicKey to ATM
+				        dhPublicKeyMsg = new MessageSequence(serverPublicKey, messageCounter);
+				        out.writeObject(dhPublicKeyMsg);
+				        messageCounter++;
+				        
+				        secretKey = EncryptionUtils.calculateSecretSharedKey(serverKeyPair.getPrivate(), clientDHPublicKey);
+				        
+				        //Receive the secret key hash from atm
+				        secretKeyHashMsg = (byte[]) in.readObject();
+				        hashMessage = (MessageSequence) Utils.deserializeData(secretKeyHashMsg);
+				        if (hashMessage.getCounter() != messageCounter) return;
+				        messageCounter++;
+				        secretKeyHashFromAtm = hashMessage.getMessage();
+				        
+				        //Calculate the hash myself
+				        md = MessageDigest.getInstance("SHA3-256");
+				        md.update(secretKey.getEncoded());
+				        hashBytes = md.digest();
+				        
+				        if (!Arrays.equals(hashBytes, secretKeyHashFromAtm)) return;
+				        
+				        //Calculate hash of public key plus secret key
+				        secretKeywithBankPK = new byte[secretKey.getEncoded().length + publicKey.getEncoded().length];
+				        System.arraycopy(secretKey.getEncoded(), 0, secretKeywithBankPK, 0, secretKey.getEncoded().length);
+				        System.arraycopy(publicKey.getEncoded(), 0, secretKeywithBankPK, secretKey.getEncoded().length, publicKey.getEncoded().length);
+				        
+				        md = MessageDigest.getInstance("SHA3-256");
+				        md.update(secretKeywithBankPK);
+				        hashSecretKeyBankPublicKey = md.digest();
+				        
+				        hashToSend = new MessageSequence(hashSecretKeyBankPublicKey, messageCounter);
+				        out.writeObject(hashToSend);
+				        messageCounter++;
+				        
+				        //From this moment the secretShared key is established
+				        
+				        //Server receives value to withdraw encrypted from client
+				        valueMessageEncrypted = (byte[]) in.readObject();
+				        valueMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(valueMessageEncrypted, secretKey);
+				        if (valueMessageSequence.getCounter() != messageCounter) return;
+				        messageCounter++;
+				        
+				        //Bank sends result of operation to client
+						returnCode = bankSkel.withdraw(accountName, (double) Utils.deserializeData(valueMessageSequence.getMessage()));
+						operationResultMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
+						if (returnCode == ACCOUNT_DOESNT_EXIST) {
+							operationResultMessage.setMessage(Utils.serializeData(ResponseMessage.ACCOUNT_DOESNT_EXIST));
+						}
+						else if(returnCode == NEGATIVE_BALANCE) {
+							operationResultMessage.setMessage(Utils.serializeData(ResponseMessage.NEGATIVE_BALANCE));
+						}
+						encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(operationResultMessage), secretKey);
+						out.writeObject(encryptedBytes);
+						messageCounter++;
 						break;
 					case GET_BALANCE:
 //						double currentBalance = bankSkel.getBalance(request.getAccount());

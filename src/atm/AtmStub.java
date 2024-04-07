@@ -266,24 +266,90 @@ public class AtmStub {
 		return 0;
 	}
 
-	public int withdrawAmount(RequestMessage request) {
-		if (request.getValue() <= 0) {
+	public int withdrawAmount(RequestMessage requestMessage) {
+		if (requestMessage.getValue() <= 0) {
 			return RETURN_VALUE_INVALID;
 		}
-		
-		//verify cardFile is associated to account
+		int messageCounter = 0;
+
 		try {
-			outToServer.writeObject(request);
+			//Sending the request to the bank
+			MessageSequence requestTypeToSend = new MessageSequence(Utils.serializeData(requestMessage.getRequestType()), messageCounter);
+			byte[] encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(requestTypeToSend), bankPublicKey);
+			outToServer.writeObject(encryptedBytes); //SEND A WITHDRAW REQUEST TO SERVER
+			messageCounter++;
 			
-			ResponseMessage withdrawResult = (ResponseMessage) inFromServer.readObject();
-			if(withdrawResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) return RETURN_VALUE_INVALID;
-			if(withdrawResult.equals(ResponseMessage.NEGATIVE_BALANCE)) return RETURN_VALUE_INVALID;
+			//Sending the account to the bank
+			MessageSequence accountToSend = new MessageSequence(Utils.serializeData(requestMessage.getAccount()), messageCounter);
+			encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(accountToSend), bankPublicKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
+			
+			//Start of Diffie Hellman
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
+	        keyPairGenerator.initialize(2048);
+	        KeyPair clientKeyPair = keyPairGenerator.generateKeyPair();
+	        
+	        byte[] clientPublicKey = clientKeyPair.getPublic().getEncoded();
+	        
+	        //Sends its DH PublicKey to Server
+			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
+	        outToServer.writeObject(messageDhPublicKey);
+	        messageCounter++;
+	        
+	        //Receives DH PublicKey of Server
+			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) inFromServer.readObject();
+			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
+			messageCounter++;
+			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
+			
+			SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
+	        
+	       	//Obtain hash of shared key and sends it to server
+	        MessageDigest md = MessageDigest.getInstance("SHA3-256");
+	        md.update(secretKey.getEncoded());
+	        byte[] hashBytes = md.digest();
+	        MessageSequence messageSequence = new MessageSequence(hashBytes, messageCounter); 
+	        outToServer.writeObject(Utils.serializeData(messageSequence));
+	        messageCounter++;
+	        
+	        //Calculate hash of shared key + Bank PublicKey
+	        byte[] secretKeywithBankPK = new byte[secretKey.getEncoded().length + bankPublicKey.getEncoded().length];
+	        System.arraycopy(secretKey.getEncoded(), 0, secretKeywithBankPK, 0, secretKey.getEncoded().length);
+	        System.arraycopy(bankPublicKey.getEncoded(), 0, secretKeywithBankPK, secretKey.getEncoded().length, bankPublicKey.getEncoded().length);
+	        
+	        md = MessageDigest.getInstance("SHA3-256");
+	        md.update(secretKeywithBankPK);
+	        byte[] hashSecretKeyBankPublicKey = md.digest();
+	        
+	        //Receive hash of shared key + Bank PublicKey from server and confirm hash
+	        MessageSequence receivedHashmessage = (MessageSequence) inFromServer.readObject();
+			if (receivedHashmessage.getCounter() != messageCounter || 
+				!Arrays.equals(hashSecretKeyBankPublicKey, receivedHashmessage.getMessage())) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			//From this moment the secretShared key is established
+			
+			//Client sends value to withdraw encrypted to Server
+			MessageSequence valueMessageSequence = new MessageSequence(Utils.serializeData(requestMessage.getValue()), messageCounter);
+			encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(valueMessageSequence), secretKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
+			
+			//Client receives final response from server
+			byte[] resultEncrypted = (byte[]) inFromServer.readObject();
+			MessageSequence resultMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(resultEncrypted, secretKey);
+			ResponseMessage withdrawResult = (ResponseMessage) Utils.deserializeData(resultMessageSequence.getMessage());
+			if(resultMessageSequence.getCounter() != messageCounter || withdrawResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST) 
+					|| withdrawResult.equals(ResponseMessage.NEGATIVE_BALANCE)) 
+				return RETURN_VALUE_INVALID;
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
 		} catch(Exception e) {
 			System.exit(RETURN_VALUE_INVALID);
 		}
-		Utils.printAndFlush("{\"account\":\"" + request.getAccount() + "\",\"withdraw\":" + String.format(Locale.ROOT, "%.2f",request.getValue()) + "}\n");
+		Utils.printAndFlush("{\"account\":\"" + requestMessage.getAccount() + "\",\"withdraw\":" + String.format(Locale.ROOT, "%.2f",requestMessage.getValue()) + "}\n");
 		return 0;
 	}
 

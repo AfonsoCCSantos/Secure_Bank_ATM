@@ -2,6 +2,7 @@ package atm;
 
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -44,7 +45,6 @@ public class AtmStub {
 	private PublicKey bankPublicKey;
 	private int messageCounter;
 	
-	
 	public AtmStub(Socket bankSocket, PublicKey bankPublicKey) {
 		this.outToServer = Utils.gOutputStream(bankSocket);
 		this.inFromServer = Utils.gInputStream(bankSocket);
@@ -54,7 +54,6 @@ public class AtmStub {
 	public int createAccount(RequestMessage requestMessage, String account) {
 		//verify if card file is unique
 		messageCounter = 0;
-		System.out.println(requestMessage.getCardFile());
 		Path path = Paths.get(requestMessage.getCardFile());
 		if (Files.exists(path)) {
 			return RETURN_VALUE_INVALID;
@@ -87,77 +86,17 @@ public class AtmStub {
 			
 			//Sending my public key to the bank
 			messageToSend = new MessageSequence(Utils.serializeData(publicKey), messageCounter);
-//			encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(messageToSend), bankPublicKey);
-//			byte[] messageToSendBytes = Utils.serializeData(messageToSend);
 			outToServer.writeObject(messageToSend);
 			messageCounter++;
 			
-			//Receiving nonce from bank
-			byte[] nonceEncrypted = (byte[]) inFromServer.readObject();
-			MessageSequence nonceDecrypted = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(nonceEncrypted, privateKey); 
-			if (nonceDecrypted.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
-			messageCounter++;
-			
-			//After decrypting the nonce, it sends it back to the bank
-			MessageSequence nonceToSend = new MessageSequence(nonceDecrypted.getMessage(), messageCounter);
-			encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(nonceToSend), bankPublicKey);
-			outToServer.writeObject(encryptedBytes);
-			messageCounter++;
-			
-			MessageSequence messageReceived = (MessageSequence) inFromServer.readObject(); //Think whether it makes sense to encrypt
-			ResponseMessage responseMessage = (ResponseMessage) Utils.deserializeData(messageReceived.getMessage());
-			
-			if (messageReceived.getCounter() != messageCounter || responseMessage.equals(ResponseMessage.AUTHENTICATION_FAILURE)) 
-				return RETURN_VALUE_INVALID;
-			messageCounter++;
-			
-			//Generate nonce and send it to bank - bank has to authenticate
-			byte[] nonce = EncryptionUtils.generateNonce(32);
-			MessageSequence nonceMessage = new MessageSequence(nonce, messageCounter);
-			byte[] encryptedNonceMessage = EncryptionUtils.rsaEncrypt(Utils.serializeData(nonceMessage), bankPublicKey);
-			outToServer.writeObject(encryptedNonceMessage);
-			messageCounter++;
-			
-			//Receive nonce back from the bank
-			byte[] receivedNonceBytes = (byte[]) inFromServer.readObject();
-			MessageSequence receivedNonceMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(receivedNonceBytes, privateKey);
-			if (receivedNonceMessage.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
-			messageCounter++;
-			
-			if (!Arrays.equals(nonce, receivedNonceMessage.getMessage())) {
-				MessageSequence returnMessage = new MessageSequence(Utils.serializeData(ResponseMessage.AUTHENTICATION_FAILURE), messageCounter);
-				outToServer.writeObject(returnMessage); //Think whether it makes sense to encrypt
-				return RETURN_VALUE_INVALID;
-			}
-			MessageSequence returnMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
-			outToServer.writeObject(returnMessage);
-			messageCounter++;
-			
+			if (!clientAuthenticationChallenge()) return RETURN_VALUE_INVALID;
 			// Authentication completed
 			
-			//Start of Diffie Hellman
-			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
-	        keyPairGenerator.initialize(2048);
-	        KeyPair clientKeyPair = keyPairGenerator.generateKeyPair();
-	        
-	        byte[] clientPublicKey = clientKeyPair.getPublic().getEncoded();
-	        
-	        //Client receives publicKey DH of server
-			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) inFromServer.readObject();
-			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
-			messageCounter++;
-			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
+			//Here the client has a secret key to talk with the server
+	        SecretKey secretKey = clientDHExchange();
+	        if (secretKey == null) return RETURN_VALUE_INVALID;
 			
-			//Client sends its DH publicKey to server
-			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
-	        outToServer.writeObject(messageDhPublicKey);
-	        messageCounter++;
-	        
-	        SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
-	        		
-	        //Here the client has a secret key to talk with the server
-			
-			//Client sends account and value encryoted to server
+			//Client sends account and value encrypted to server
 			MessageSequence requestMessageSequence = new MessageSequence(Utils.serializeData(requestMessage), messageCounter);
 			encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(requestMessageSequence), secretKey);
 			outToServer.writeObject(encryptedBytes);
@@ -188,6 +127,14 @@ public class AtmStub {
 		messageCounter = 0;
 
 		try {
+			Path path = Paths.get(requestMessage.getCardFile());
+			if (!Files.exists(path)) {
+				return RETURN_VALUE_INVALID;
+			}
+			KeyPair keyPair = loadCardFile(requestMessage.getCardFile());
+			if (keyPair == null) return RETURN_VALUE_INVALID;
+			privateKey = keyPair.getPrivate();
+			
 			//Sending the request to the bank
 			MessageSequence requestTypeToSend = new MessageSequence(Utils.serializeData(requestMessage.getRequestType()), messageCounter);
 			byte[] encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(requestTypeToSend), bankPublicKey);
@@ -200,10 +147,13 @@ public class AtmStub {
 			outToServer.writeObject(encryptedBytes);
 			messageCounter++;
 			
-			//Start of Diffie Hellman
-			SecretKey secretKey = clientAuthenticationDH();
-			if(secretKey == null) return RETURN_VALUE_INVALID; 
+			if (!clientAuthenticationChallenge()) return RETURN_VALUE_INVALID;
+			// Authentication completed
 			
+			
+	        SecretKey secretKey = clientDHExchange();
+	        if (secretKey == null) return RETURN_VALUE_INVALID;
+	        		
 			//From this moment the secretShared key is established
 			
 			//Client sends value to deposit encrypted to Server
@@ -235,6 +185,10 @@ public class AtmStub {
 		messageCounter = 0;
 
 		try {
+			KeyPair keyPair = loadCardFile(requestMessage.getCardFile());
+			if (keyPair == null) return RETURN_VALUE_INVALID;
+			privateKey = keyPair.getPrivate();
+			
 			//Sending the request to the bank
 			MessageSequence requestTypeToSend = new MessageSequence(Utils.serializeData(requestMessage.getRequestType()), messageCounter);
 			byte[] encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(requestTypeToSend), bankPublicKey);
@@ -247,10 +201,13 @@ public class AtmStub {
 			outToServer.writeObject(encryptedBytes);
 			messageCounter++;
 			
-			//Start of Diffie Hellman
-			SecretKey secretKey = clientAuthenticationDH();
-			if(secretKey == null) return RETURN_VALUE_INVALID; 
+			if (!clientAuthenticationChallenge()) return RETURN_VALUE_INVALID;
 			
+			// Authentication completed
+			
+	        SecretKey secretKey = clientDHExchange();
+	        if (secretKey == null) return RETURN_VALUE_INVALID;
+	        		
 			//From this moment the secretShared key is established
 			
 			//Client sends value to withdraw encrypted to Server
@@ -279,6 +236,10 @@ public class AtmStub {
 		String balance = null;
 		messageCounter = 0;
 		try {
+			KeyPair keyPair = loadCardFile(requestMessage.getCardFile());
+			if (keyPair == null) return RETURN_VALUE_INVALID;
+			privateKey = keyPair.getPrivate();
+			
 			//Sending the request to the bank
 			MessageSequence requestTypeToSend = new MessageSequence(Utils.serializeData(requestMessage.getRequestType()), messageCounter);
 			byte[] encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(requestTypeToSend), bankPublicKey);
@@ -291,10 +252,13 @@ public class AtmStub {
 			outToServer.writeObject(encryptedBytes);
 			messageCounter++;
 			
-			//Start of Diffie Hellman
-			SecretKey secretKey = clientAuthenticationDH();
-			if(secretKey == null) return RETURN_VALUE_INVALID; 
+			if (!clientAuthenticationChallenge()) return RETURN_VALUE_INVALID;
 			
+			// Authentication completed
+			
+	        SecretKey secretKey = clientDHExchange();
+	        if (secretKey == null) return RETURN_VALUE_INVALID;
+	        		
 			//From this moment the secretShared key is established
 			
 			//Client receives result of operation from server
@@ -305,11 +269,9 @@ public class AtmStub {
 				return RETURN_VALUE_INVALID;
 			messageCounter++;
 			
-			
 			//If operation is a success, client receives balance from bank
 			byte[] balanceEncrypted = (byte[]) inFromServer.readObject();
 			MessageSequence balanceMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(balanceEncrypted, secretKey);
-			System.out.println("OLA");
 			if(balanceMessageSequence.getCounter() != messageCounter) 
 				return RETURN_VALUE_INVALID;
 			balance = (String) Utils.deserializeData(balanceMessageSequence.getMessage());
@@ -333,7 +295,68 @@ public class AtmStub {
 		Utils.printAndFlush("Card file created.\n");
 	}
 	
-	private SecretKey clientAuthenticationDH() {
+	private static KeyPair loadCardFile(String cardFileName) {
+		KeyPair keypair = null;
+		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(cardFileName))) {
+			keypair = (KeyPair) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			System.exit(RETURN_VALUE_INVALID);
+		}
+		return keypair; 
+	}
+	
+	private boolean clientAuthenticationChallenge() {
+		try {
+			//Receiving nonce from bank
+			byte[] nonceEncrypted = (byte[]) inFromServer.readObject();
+			MessageSequence nonceDecrypted = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(nonceEncrypted, privateKey); 
+			if (nonceDecrypted.getCounter() != messageCounter) return false;
+			messageCounter++;
+			
+			//After decrypting the nonce, it sends it back to the bank
+			MessageSequence nonceToSend = new MessageSequence(nonceDecrypted.getMessage(), messageCounter);
+			byte[] encryptedBytes = EncryptionUtils.rsaEncrypt(Utils.serializeData(nonceToSend), bankPublicKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
+			
+			MessageSequence messageReceived = (MessageSequence) inFromServer.readObject(); //Think whether it makes sense to encrypt
+			ResponseMessage responseMessage = (ResponseMessage) Utils.deserializeData(messageReceived.getMessage());
+			
+			if (messageReceived.getCounter() != messageCounter || responseMessage.equals(ResponseMessage.AUTHENTICATION_FAILURE)) 
+				return false;
+			messageCounter++;
+			
+			//Generate nonce and send it to bank - bank has to authenticate
+			byte[] nonce = EncryptionUtils.generateNonce(32);
+			MessageSequence nonceMessage = new MessageSequence(nonce, messageCounter);
+			byte[] encryptedNonceMessage = EncryptionUtils.rsaEncrypt(Utils.serializeData(nonceMessage), bankPublicKey);
+			outToServer.writeObject(encryptedNonceMessage);
+			messageCounter++;
+			
+			//Receive nonce back from the bank
+			byte[] receivedNonceBytes = (byte[]) inFromServer.readObject();
+			MessageSequence receivedNonceMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(receivedNonceBytes, privateKey);
+			if (receivedNonceMessage.getCounter() != messageCounter) return false;
+			messageCounter++;
+			
+			if (!Arrays.equals(nonce, receivedNonceMessage.getMessage())) {
+				MessageSequence returnMessage = new MessageSequence(Utils.serializeData(ResponseMessage.AUTHENTICATION_FAILURE), messageCounter);
+				outToServer.writeObject(returnMessage); //Think whether it makes sense to encrypt
+				return false;
+			}
+			MessageSequence returnMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
+			outToServer.writeObject(returnMessage);
+			messageCounter++;
+		 } catch(SocketTimeoutException e) {
+			System.exit(RETURN_CONNECTION_ERROR);
+		 } catch(Exception e) {
+			return false; 
+		 } 
+			
+		return true;
+	}
+	
+	private SecretKey clientDHExchange() {
 		SecretKey secretKey = null;
 		try {
 			//Start of Diffie Hellman
@@ -343,43 +366,18 @@ public class AtmStub {
 	        
 	        byte[] clientPublicKey = clientKeyPair.getPublic().getEncoded();
 	        
-	        //Sends its DH PublicKey to Server
-			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
-			outToServer.writeObject(messageDhPublicKey);
-	        messageCounter++;
-	        
-	        //Receives DH PublicKey of Server
+	        //Client receives publicKey DH of server
 			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) inFromServer.readObject();
 			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return null;
 			messageCounter++;
 			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
 			
-			secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
-	        
-	       	//Obtain hash of shared key and sends it to server
-	        MessageDigest md = MessageDigest.getInstance("SHA3-256");
-	        md.update(secretKey.getEncoded());
-	        byte[] hashBytes = md.digest();
-	        MessageSequence messageSequence = new MessageSequence(hashBytes, messageCounter); 
-	        outToServer.writeObject(Utils.serializeData(messageSequence));
+			//Client sends its DH publicKey to server
+			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
+	        outToServer.writeObject(messageDhPublicKey);
 	        messageCounter++;
 	        
-	        //Calculate hash of shared key + Bank PublicKey
-	        byte[] secretKeywithBankPK = new byte[secretKey.getEncoded().length + bankPublicKey.getEncoded().length];
-	        System.arraycopy(secretKey.getEncoded(), 0, secretKeywithBankPK, 0, secretKey.getEncoded().length);
-	        System.arraycopy(bankPublicKey.getEncoded(), 0, secretKeywithBankPK, secretKey.getEncoded().length, bankPublicKey.getEncoded().length);
-	        
-	        md = MessageDigest.getInstance("SHA3-256");
-	        md.update(secretKeywithBankPK);
-	        byte[] hashSecretKeyBankPublicKey = md.digest();
-	        
-	        //Receive hash of shared key + Bank PublicKey from server and confirm hash
-	        MessageSequence receivedHashmessage = (MessageSequence) inFromServer.readObject();
-			if (receivedHashmessage.getCounter() != messageCounter || 
-				!Arrays.equals(hashSecretKeyBankPublicKey, receivedHashmessage.getMessage())) 
-				return null;
-			messageCounter++;
-			
+	        secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
 	    } catch (Exception e) {

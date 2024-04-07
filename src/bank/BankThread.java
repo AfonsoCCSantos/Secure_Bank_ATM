@@ -137,14 +137,7 @@ public class BankThread extends Thread {
 						messageCounter++;
 						byte[] clientDHPublicKey = receivedPublicKeyDHmessage.getMessage();
  						
-						KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
-				        keyAgreement.init(serverKeyPair.getPrivate());
-				        KeyFactory keyFactory = KeyFactory.getInstance("DH");
-				        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(clientDHPublicKey);
-				        PublicKey clientDHPKObject = keyFactory.generatePublic(x509KeySpec);
-				        keyAgreement.doPhase(clientDHPKObject, true);
-				        byte[] sharedSecret = keyAgreement.generateSecret();
-				        SecretKey secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
+						SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(serverKeyPair.getPrivate(), clientDHPublicKey);
 				        
 				        //Here the bank has a secret key to use in the communications
 				        
@@ -192,14 +185,7 @@ public class BankThread extends Thread {
 				        out.writeObject(dhPublicKeyMsg);
 				        messageCounter++;
 				        
-				        keyAgreement = KeyAgreement.getInstance("DH");
-				        keyAgreement.init(serverKeyPair.getPrivate());
-				        keyFactory = KeyFactory.getInstance("DH");
-				        x509KeySpec = new X509EncodedKeySpec(clientDHPublicKey);
-				        clientDHPKObject = keyFactory.generatePublic(x509KeySpec);
-				        keyAgreement.doPhase(clientDHPKObject, true);
-				        sharedSecret = keyAgreement.generateSecret();
-				        secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
+				        secretKey = EncryptionUtils.calculateSecretSharedKey(serverKeyPair.getPrivate(), clientDHPublicKey);
 				        
 				        //Receive the secret key hash from atm
 				        byte[] secretKeyHashMsg = (byte[]) in.readObject();

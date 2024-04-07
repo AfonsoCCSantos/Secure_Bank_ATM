@@ -3,9 +3,15 @@ package utils;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.spec.X509EncodedKeySpec;
 import java.security.Key;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+
 import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 
 public class EncryptionUtils {
@@ -90,5 +96,23 @@ public class EncryptionUtils {
 			e.printStackTrace();
 		}
 		return result;
+	}
+	
+	public static SecretKey calculateSecretSharedKey(PrivateKey ownPrivateKey, byte[] othersPublicKey) {
+		SecretKey secretKey = null;
+		try {
+			KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
+			keyAgreement.init(ownPrivateKey);
+	        KeyFactory keyFactory = KeyFactory.getInstance("DH");
+	        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(othersPublicKey);
+	        PublicKey bankDHPKObject = keyFactory.generatePublic(x509KeySpec);
+	        keyAgreement.doPhase(bankDHPKObject, true);
+	        byte[] sharedSecret = keyAgreement.generateSecret();
+	        secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return secretKey;
 	}
 }

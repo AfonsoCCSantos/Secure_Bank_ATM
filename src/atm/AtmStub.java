@@ -151,15 +151,8 @@ public class AtmStub {
 	        outToServer.writeObject(messageDhPublicKey);
 	        messageCounter++;
 	        
-	        KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
-	        keyAgreement.init(clientKeyPair.getPrivate());
-	        KeyFactory keyFactory = KeyFactory.getInstance("DH");
-	        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankDHPublicKey);
-	        PublicKey bankDHPKObject = keyFactory.generatePublic(x509KeySpec);
-	        keyAgreement.doPhase(bankDHPKObject, true);
-	        byte[] sharedSecret = keyAgreement.generateSecret();
-	        SecretKey secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
-	        
+	        SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
+	        		
 	        //Here the client has a secret key to talk with the server
 			
 			//Client sends account and value encryoted to server
@@ -223,14 +216,7 @@ public class AtmStub {
 			messageCounter++;
 			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
 			
-	        KeyAgreement keyAgreement = KeyAgreement.getInstance("DH");
-	        keyAgreement.init(clientKeyPair.getPrivate());
-	        KeyFactory keyFactory = KeyFactory.getInstance("DH");
-	        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(bankDHPublicKey);
-	        PublicKey bankDHPKObject = keyFactory.generatePublic(x509KeySpec);
-	        keyAgreement.doPhase(bankDHPKObject, true);
-	        byte[] sharedSecret = keyAgreement.generateSecret();
-	        SecretKey secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
+			SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
 	        
 	       	//Obtain hash of shared key and sends it to server
 	        MessageDigest md = MessageDigest.getInstance("SHA3-256");

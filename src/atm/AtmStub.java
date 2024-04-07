@@ -18,20 +18,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.util.Arrays;
 import java.util.Locale;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 public class AtmStub {
 	
@@ -101,6 +95,8 @@ public class AtmStub {
 			encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(requestMessageSequence), secretKey);
 			outToServer.writeObject(encryptedBytes);
 			messageCounter++;
+			
+			// Create HMAC SHA-256 instance
 			
 			//Client receives final response from server
 			byte[] resultEncrypted = (byte[]) inFromServer.readObject();

@@ -1,10 +1,8 @@
 import java.net.Socket;
 import java.security.PublicKey;
-import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import atm.AtmStub;
 import utils.RequestMessage;

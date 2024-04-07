@@ -27,6 +27,7 @@ import java.security.KeyPair;
 import java.util.Arrays;
 import java.util.Locale;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -41,6 +42,7 @@ public class AtmStub {
 	private ObjectOutputStream outToServer;
 	private PrivateKey privateKey;
 	private PublicKey bankPublicKey;
+	private int messageCounter;
 	
 	
 	public AtmStub(Socket bankSocket, PublicKey bankPublicKey) {
@@ -51,7 +53,7 @@ public class AtmStub {
 	
 	public int createAccount(RequestMessage requestMessage, String account) {
 		//verify if card file is unique
-		int messageCounter = 0;
+		messageCounter = 0;
 		System.out.println(requestMessage.getCardFile());
 		Path path = Paths.get(requestMessage.getCardFile());
 		if (Files.exists(path)) {
@@ -183,7 +185,7 @@ public class AtmStub {
 			return RETURN_VALUE_INVALID;
 		} 
 		
-		int messageCounter = 0;
+		messageCounter = 0;
 
 		try {
 			//Sending the request to the bank
@@ -199,48 +201,8 @@ public class AtmStub {
 			messageCounter++;
 			
 			//Start of Diffie Hellman
-			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
-	        keyPairGenerator.initialize(2048);
-	        KeyPair clientKeyPair = keyPairGenerator.generateKeyPair();
-	        
-	        byte[] clientPublicKey = clientKeyPair.getPublic().getEncoded();
-	        
-	        //Sends its DH PublicKey to Server
-			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
-	        outToServer.writeObject(messageDhPublicKey);
-	        messageCounter++;
-	        
-			//Receives DH PublicKey of Server
-			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) inFromServer.readObject();
-			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
-			messageCounter++;
-			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
-			
-			SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
-	        
-	       	//Obtain hash of shared key and sends it to server
-	        MessageDigest md = MessageDigest.getInstance("SHA3-256");
-	        md.update(secretKey.getEncoded());
-	        byte[] hashBytes = md.digest();
-	        MessageSequence messageSequence = new MessageSequence(hashBytes, messageCounter); 
-	        outToServer.writeObject(Utils.serializeData(messageSequence));
-	        messageCounter++;
-	        
-	        //Calculate hash of shared key + Bank PublicKey
-	        byte[] secretKeywithBankPK = new byte[secretKey.getEncoded().length + bankPublicKey.getEncoded().length];
-	        System.arraycopy(secretKey.getEncoded(), 0, secretKeywithBankPK, 0, secretKey.getEncoded().length);
-	        System.arraycopy(bankPublicKey.getEncoded(), 0, secretKeywithBankPK, secretKey.getEncoded().length, bankPublicKey.getEncoded().length);
-	        
-	        md = MessageDigest.getInstance("SHA3-256");
-	        md.update(secretKeywithBankPK);
-	        byte[] hashSecretKeyBankPublicKey = md.digest();
-	        
-	        //Receive hash of shared key + Bank PublicKey from server and confirm hash
-	        MessageSequence receivedHashmessage = (MessageSequence) inFromServer.readObject();
-			if (receivedHashmessage.getCounter() != messageCounter || 
-				!Arrays.equals(hashSecretKeyBankPublicKey, receivedHashmessage.getMessage())) 
-				return RETURN_VALUE_INVALID;
-			messageCounter++;
+			SecretKey secretKey = clientAuthenticationDH();
+			if(secretKey == null) return RETURN_VALUE_INVALID; 
 			
 			//From this moment the secretShared key is established
 			
@@ -270,7 +232,7 @@ public class AtmStub {
 		if (requestMessage.getValue() <= 0) {
 			return RETURN_VALUE_INVALID;
 		}
-		int messageCounter = 0;
+		messageCounter = 0;
 
 		try {
 			//Sending the request to the bank
@@ -286,48 +248,8 @@ public class AtmStub {
 			messageCounter++;
 			
 			//Start of Diffie Hellman
-			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
-	        keyPairGenerator.initialize(2048);
-	        KeyPair clientKeyPair = keyPairGenerator.generateKeyPair();
-	        
-	        byte[] clientPublicKey = clientKeyPair.getPublic().getEncoded();
-	        
-	        //Sends its DH PublicKey to Server
-			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
-	        outToServer.writeObject(messageDhPublicKey);
-	        messageCounter++;
-	        
-	        //Receives DH PublicKey of Server
-			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) inFromServer.readObject();
-			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return RETURN_VALUE_INVALID;
-			messageCounter++;
-			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
-			
-			SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
-	        
-	       	//Obtain hash of shared key and sends it to server
-	        MessageDigest md = MessageDigest.getInstance("SHA3-256");
-	        md.update(secretKey.getEncoded());
-	        byte[] hashBytes = md.digest();
-	        MessageSequence messageSequence = new MessageSequence(hashBytes, messageCounter); 
-	        outToServer.writeObject(Utils.serializeData(messageSequence));
-	        messageCounter++;
-	        
-	        //Calculate hash of shared key + Bank PublicKey
-	        byte[] secretKeywithBankPK = new byte[secretKey.getEncoded().length + bankPublicKey.getEncoded().length];
-	        System.arraycopy(secretKey.getEncoded(), 0, secretKeywithBankPK, 0, secretKey.getEncoded().length);
-	        System.arraycopy(bankPublicKey.getEncoded(), 0, secretKeywithBankPK, secretKey.getEncoded().length, bankPublicKey.getEncoded().length);
-	        
-	        md = MessageDigest.getInstance("SHA3-256");
-	        md.update(secretKeywithBankPK);
-	        byte[] hashSecretKeyBankPublicKey = md.digest();
-	        
-	        //Receive hash of shared key + Bank PublicKey from server and confirm hash
-	        MessageSequence receivedHashmessage = (MessageSequence) inFromServer.readObject();
-			if (receivedHashmessage.getCounter() != messageCounter || 
-				!Arrays.equals(hashSecretKeyBankPublicKey, receivedHashmessage.getMessage())) 
-				return RETURN_VALUE_INVALID;
-			messageCounter++;
+			SecretKey secretKey = clientAuthenticationDH();
+			if(secretKey == null) return RETURN_VALUE_INVALID; 
 			
 			//From this moment the secretShared key is established
 			
@@ -381,6 +303,61 @@ public class AtmStub {
 			System.exit(RETURN_VALUE_INVALID);
 		} 
 		Utils.printAndFlush("Card file created.\n");
+	}
+	
+	private SecretKey clientAuthenticationDH() {
+		SecretKey secretKey = null;
+		try {
+			//Start of Diffie Hellman
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
+	        keyPairGenerator.initialize(2048);
+	        KeyPair clientKeyPair = keyPairGenerator.generateKeyPair();
+	        
+	        byte[] clientPublicKey = clientKeyPair.getPublic().getEncoded();
+	        
+	        //Sends its DH PublicKey to Server
+			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
+			outToServer.writeObject(messageDhPublicKey);
+	        messageCounter++;
+	        
+	        //Receives DH PublicKey of Server
+			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) inFromServer.readObject();
+			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return null;
+			messageCounter++;
+			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
+			
+			secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);
+	        
+	       	//Obtain hash of shared key and sends it to server
+	        MessageDigest md = MessageDigest.getInstance("SHA3-256");
+	        md.update(secretKey.getEncoded());
+	        byte[] hashBytes = md.digest();
+	        MessageSequence messageSequence = new MessageSequence(hashBytes, messageCounter); 
+	        outToServer.writeObject(Utils.serializeData(messageSequence));
+	        messageCounter++;
+	        
+	        //Calculate hash of shared key + Bank PublicKey
+	        byte[] secretKeywithBankPK = new byte[secretKey.getEncoded().length + bankPublicKey.getEncoded().length];
+	        System.arraycopy(secretKey.getEncoded(), 0, secretKeywithBankPK, 0, secretKey.getEncoded().length);
+	        System.arraycopy(bankPublicKey.getEncoded(), 0, secretKeywithBankPK, secretKey.getEncoded().length, bankPublicKey.getEncoded().length);
+	        
+	        md = MessageDigest.getInstance("SHA3-256");
+	        md.update(secretKeywithBankPK);
+	        byte[] hashSecretKeyBankPublicKey = md.digest();
+	        
+	        //Receive hash of shared key + Bank PublicKey from server and confirm hash
+	        MessageSequence receivedHashmessage = (MessageSequence) inFromServer.readObject();
+			if (receivedHashmessage.getCounter() != messageCounter || 
+				!Arrays.equals(hashSecretKeyBankPublicKey, receivedHashmessage.getMessage())) 
+				return null;
+			messageCounter++;
+			
+		} catch(SocketTimeoutException e) {
+			System.exit(RETURN_CONNECTION_ERROR);
+	    } catch (Exception e) {
+			e.printStackTrace();
+		}
+		return secretKey;
 	}
 	
 	

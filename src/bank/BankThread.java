@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 
 import utils.EncryptionUtils;
@@ -86,10 +87,19 @@ public class BankThread extends Thread {
 						if(requestMessageSequence.getCounter() != messageCounter) 
 							return;
 						RequestMessage requestMessageReceived = (RequestMessage) Utils.deserializeData(requestMessageSequence.getMessage());
-						int returnCode = bankSkel.createAccount(requestMessageReceived.getAccount(), requestMessageReceived.getValue(), clientPublicKey);
 						messageCounter++;
 						
+						//Server receives and confirms HMAC
+						byte[] hmacMessageEncrypted = (byte[]) in.readObject();
+						MessageSequence hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
+						if(hmacMessageSequence.getCounter() != messageCounter) return;
+						messageCounter++;
+						
+            			byte[] hmacBytes = EncryptionUtils.createHmac(secretKey, requestMessageSequence.getMessage());
+            			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return; 
+            			
 						//Bank sends result of operation to client
+						int returnCode = bankSkel.createAccount(requestMessageReceived.getAccount(), requestMessageReceived.getValue(), clientPublicKey);
 						MessageSequence operationResultMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
 						if (returnCode == ACCOUNT_ALREADY_EXISTS) {
 							operationResultMessage.setMessage(Utils.serializeData(ResponseMessage.ACCOUNT_ALREADY_EXISTS));
@@ -119,6 +129,16 @@ public class BankThread extends Thread {
 						if (valueMessageSequence.getCounter() != messageCounter) return;
 						messageCounter++;
 						
+						//Server receives and confirms HMAC
+						hmacMessageEncrypted = (byte[]) in.readObject();
+						hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
+						if(hmacMessageSequence.getCounter() != messageCounter) 
+							return;
+						messageCounter++;
+						
+						hmacBytes = EncryptionUtils.createHmac(secretKey, valueMessageSequence.getMessage());
+            			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return;
+            			
 						returnCode = bankSkel.deposit(accountName, (double) Utils.deserializeData(valueMessageSequence.getMessage()));
 						operationResultMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
 						if (returnCode == ACCOUNT_DOESNT_EXIST) {
@@ -152,6 +172,16 @@ public class BankThread extends Thread {
 				        valueMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(valueMessageEncrypted, secretKey);
 				        if (valueMessageSequence.getCounter() != messageCounter) return;
 				        messageCounter++;
+				        
+				        //Server receives and confirms HMAC
+						hmacMessageEncrypted = (byte[]) in.readObject();
+						hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
+						if(hmacMessageSequence.getCounter() != messageCounter) 
+							return;
+						messageCounter++;
+						
+						hmacBytes = EncryptionUtils.createHmac(secretKey, valueMessageSequence.getMessage());
+            			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return;
 				        
 				        //Bank sends result of operation to client
 						returnCode = bankSkel.withdraw(accountName, (double) Utils.deserializeData(valueMessageSequence.getMessage()));

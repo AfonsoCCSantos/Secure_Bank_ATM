@@ -25,6 +25,7 @@ import java.security.KeyPair;
 import java.util.Arrays;
 import java.util.Locale;
 
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 
 public class AtmStub {
@@ -96,7 +97,12 @@ public class AtmStub {
 			outToServer.writeObject(encryptedBytes);
 			messageCounter++;
 			
-			// Create HMAC SHA-256 instance
+			// Create HMAC and send it to bank
+            byte[] hmacBytes = EncryptionUtils.createHmac(secretKey, Utils.serializeData(requestMessage));
+            MessageSequence hmacMessageSequence = new MessageSequence(hmacBytes, messageCounter);
+            encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(hmacMessageSequence), secretKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
 			
 			//Client receives final response from server
 			byte[] resultEncrypted = (byte[]) inFromServer.readObject();
@@ -121,7 +127,6 @@ public class AtmStub {
 		} 
 		
 		messageCounter = 0;
-
 		try {
 			Path path = Paths.get(requestMessage.getCardFile());
 			if (!Files.exists(path)) {
@@ -146,7 +151,6 @@ public class AtmStub {
 			if (!clientAuthenticationChallenge()) return RETURN_VALUE_INVALID;
 			// Authentication completed
 			
-			
 	        SecretKey secretKey = clientDHExchange();
 	        if (secretKey == null) return RETURN_VALUE_INVALID;
 	        		
@@ -155,6 +159,13 @@ public class AtmStub {
 			//Client sends value to deposit encrypted to Server
 			MessageSequence valueMessageSequence = new MessageSequence(Utils.serializeData(requestMessage.getValue()), messageCounter);
 			encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(valueMessageSequence), secretKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
+			
+			// Create HMAC and send it to bank
+            byte[] hmacBytes = EncryptionUtils.createHmac(secretKey, Utils.serializeData(requestMessage.getValue()));
+            MessageSequence hmacMessageSequence = new MessageSequence(hmacBytes, messageCounter);
+            encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(hmacMessageSequence), secretKey);
 			outToServer.writeObject(encryptedBytes);
 			messageCounter++;
 	        
@@ -209,6 +220,13 @@ public class AtmStub {
 			//Client sends value to withdraw encrypted to Server
 			MessageSequence valueMessageSequence = new MessageSequence(Utils.serializeData(requestMessage.getValue()), messageCounter);
 			encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(valueMessageSequence), secretKey);
+			outToServer.writeObject(encryptedBytes);
+			messageCounter++;
+			
+			// Create HMAC and send it to bank
+            byte[] hmacBytes = EncryptionUtils.createHmac(secretKey, Utils.serializeData(requestMessage.getValue()));
+            MessageSequence hmacMessageSequence = new MessageSequence(hmacBytes, messageCounter);
+            encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(hmacMessageSequence), secretKey);
 			outToServer.writeObject(encryptedBytes);
 			messageCounter++;
 			

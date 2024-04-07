@@ -4,10 +4,13 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.X509EncodedKeySpec;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -112,5 +115,18 @@ public class EncryptionUtils {
 			e.printStackTrace();
 		}
 		return secretKey;
+	}
+	
+	public static byte[] createHmac(SecretKey secretKey, byte[] message) {
+		Mac hmacSha256;
+		try {
+			hmacSha256 = Mac.getInstance("HmacSHA256");
+			hmacSha256.init(secretKey);
+			byte[] hmacBytes = hmacSha256.doFinal(message);
+			return hmacBytes;
+		} catch (NoSuchAlgorithmException | InvalidKeyException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

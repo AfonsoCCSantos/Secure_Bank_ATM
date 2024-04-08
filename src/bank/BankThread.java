@@ -78,7 +78,7 @@ public class BankThread extends Thread {
 						if (!bankAuthenticationChallenge(clientPublicKey)) return;
 
 						//Here the bank has a secret key to use in the communications
-						SecretKey secretKey = bankDHExchange();
+						SecretKey secretKey = bankDHExchange(clientPublicKey);
 						if (secretKey == null) return;
 				        
 				        //Server receives account and value encrypted from client
@@ -121,7 +121,7 @@ public class BankThread extends Thread {
 						if (!bankAuthenticationChallenge(clientPublicKey)) return;
 						
 						//Here the bank has a secret key to use in the communications
-						secretKey = bankDHExchange();
+						secretKey = bankDHExchange(clientPublicKey);
 						if (secretKey == null) return;
 						
 						byte[] valueMessageEncrypted = (byte[]) in.readObject();
@@ -162,7 +162,7 @@ public class BankThread extends Thread {
 						if (!bankAuthenticationChallenge(clientPublicKey)) return;
 						
 						//Here the bank has a secret key to use in the communications
-						secretKey = bankDHExchange();
+						secretKey = bankDHExchange(clientPublicKey);
 						if (secretKey == null) return;
 				        
 				        //From this moment the secretShared key is established
@@ -209,7 +209,7 @@ public class BankThread extends Thread {
 						if (!bankAuthenticationChallenge(clientPublicKey)) return;
 						
 						//Here the bank has a secret key to use in the communications
-						secretKey = bankDHExchange();
+						secretKey = bankDHExchange(clientPublicKey);
 						if (secretKey == null) return;
 				        
 				        //From this moment the secretShared key is established
@@ -295,7 +295,7 @@ public class BankThread extends Thread {
 		}
 	}
 	
-	private SecretKey bankDHExchange() {
+	private SecretKey bankDHExchange(PublicKey clientPublicKey) {
         try {
         	KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
             keyPairGenerator.initialize(2048);
@@ -305,14 +305,30 @@ public class BankThread extends Thread {
             byte[] serverPublicKey = serverKeyPair.getPublic().getEncoded();
             MessageSequence dhPublicKeyMsg = new MessageSequence(serverPublicKey, messageCounter);
 			out.writeObject(dhPublicKeyMsg);
-			
 			messageCounter++;
+			
+			//Send a signed hash of the public key to confirm it is correct
+	        byte[] dhPublicKeyHash = EncryptionUtils.createHash(serverPublicKey);
+	        byte[] dhPublicKeyHashSigned = EncryptionUtils.sign(dhPublicKeyHash, privateKey);
+	        MessageSequence messageDhPublicKeySignedHash = new MessageSequence(dhPublicKeyHashSigned, messageCounter);
+	        out.writeObject(messageDhPublicKeySignedHash);
+	        messageCounter++;
 	        
 	        //Receive DH Public key from atm
 			MessageSequence receivedPublicKeyDHmessage = (MessageSequence) in.readObject();
 			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return null;
 			messageCounter++;
 			byte[] clientDHPublicKey = receivedPublicKeyDHmessage.getMessage();
+			byte[] dhPubKeyHash = EncryptionUtils.createHash(clientDHPublicKey);
+			
+			//Receive signed hash of the client's DH public key
+			MessageSequence dHPubKeyHashMessage = (MessageSequence) in.readObject();
+			if (dHPubKeyHashMessage.getCounter() != messageCounter) return null;
+			messageCounter++;
+			byte[] clientDHPublicKeySignedHash = dHPubKeyHashMessage.getMessage();
+			
+			//Check if it matches the signature from the bank
+			if (!EncryptionUtils.verifySignature(dhPubKeyHash, clientDHPublicKeySignedHash, clientPublicKey)) return null;
 			
 			SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(serverKeyPair.getPrivate(), clientDHPublicKey);
 			return secretKey;

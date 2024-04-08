@@ -3,9 +3,12 @@ package utils;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.spec.X509EncodedKeySpec;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import javax.crypto.Cipher;
@@ -129,4 +132,41 @@ public class EncryptionUtils {
 		}
 		return null;
 	}
+	
+	public static byte[] createHash(byte[] message) {
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			return digest.digest(message);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static byte[] sign(byte[] hash, PrivateKey privateKey) {
+        Signature signature;
+		try {
+			signature = Signature.getInstance("SHA256withRSA");
+			signature.initSign(privateKey);
+	        signature.update(hash);
+	        return signature.sign();
+		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+			e.printStackTrace();
+		}
+		return null;
+    }
+	
+	public static boolean verifySignature(byte[] hash, byte[] signature, PublicKey publicKey) {
+        Signature verifier;
+		try {
+			verifier = Signature.getInstance("SHA256withRSA");
+			verifier.initVerify(publicKey);
+	        verifier.update(hash);
+	        return verifier.verify(signature);
+		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+			e.printStackTrace();
+		}
+		return false;
+        
+    }
 }

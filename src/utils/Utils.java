@@ -41,7 +41,7 @@ public class Utils {
     }
 	
 	public static void printAndFlush(String toPrint) {
-		System.err.println(toPrint);
+		System.err.print(toPrint);
 		System.err.flush();
 	}
 	

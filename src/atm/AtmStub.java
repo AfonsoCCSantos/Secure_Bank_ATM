@@ -385,10 +385,27 @@ public class AtmStub {
 			if (receivedPublicKeyDHmessage.getCounter() != messageCounter) return null;
 			messageCounter++;
 			byte[] bankDHPublicKey = receivedPublicKeyDHmessage.getMessage(); //DH public key of the bank
+			byte[] dhPubKeyHash = EncryptionUtils.createHash(bankDHPublicKey);
+			
+			//Receive signed hash of the server's DH public key
+			MessageSequence dHPubKeyHashMessage = (MessageSequence) inFromServer.readObject();
+			if (dHPubKeyHashMessage.getCounter() != messageCounter) return null;
+			messageCounter++;
+			byte[] bankDHPublicKeySignedHash = dHPubKeyHashMessage.getMessage();
+			
+			//Check if it matches the signature from the bank
+			if (!EncryptionUtils.verifySignature(dhPubKeyHash, bankDHPublicKeySignedHash, bankPublicKey)) return null;
 			
 			//Client sends its DH publicKey to server
 			MessageSequence messageDhPublicKey = new MessageSequence(clientPublicKey, messageCounter);
 	        outToServer.writeObject(messageDhPublicKey);
+	        messageCounter++;
+	        
+	        //Send a signed hash of the public key to confirm it is correct
+	        byte[] dhPublicKeyHash = EncryptionUtils.createHash(clientPublicKey);
+	        byte[] dhPublicKeyHashSigned = EncryptionUtils.sign(dhPublicKeyHash, privateKey);
+	        MessageSequence messageDhPublicKeySignedHash = new MessageSequence(dhPublicKeyHashSigned, messageCounter);
+	        outToServer.writeObject(messageDhPublicKeySignedHash);
 	        messageCounter++;
 	        
 	        secretKey = EncryptionUtils.calculateSecretSharedKey(clientKeyPair.getPrivate(), bankDHPublicKey);

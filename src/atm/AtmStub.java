@@ -110,6 +110,19 @@ public class AtmStub {
 			if(resultMessageSequence.getCounter() != messageCounter || 
 				Utils.deserializeData(resultMessageSequence.getMessage()).equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) 
 				return RETURN_VALUE_INVALID;
+			messageCounter++;	
+			
+			//Client receives and confirms HMAC of operation result
+			byte[] hmacMessageEncrypted = (byte[]) inFromServer.readObject();
+			hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
+			if(hmacMessageSequence.getCounter() != messageCounter) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			System.out.println("ola");
+			
+			hmacBytes = EncryptionUtils.createHmac(secretKey, resultMessageSequence.getMessage());
+			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return RETURN_VALUE_INVALID;
 			
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
@@ -175,6 +188,17 @@ public class AtmStub {
 			if(resultMessageSequence.getCounter() != messageCounter || 
 				Utils.deserializeData(resultMessageSequence.getMessage()).equals(ResponseMessage.ACCOUNT_DOESNT_EXIST)) 
 				return RETURN_VALUE_INVALID;
+			messageCounter++;	
+			
+			//Client receives and confirms HMAC of operation result
+			byte[] hmacMessageEncrypted = (byte[]) inFromServer.readObject();
+			hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
+			if(hmacMessageSequence.getCounter() != messageCounter) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			hmacBytes = EncryptionUtils.createHmac(secretKey, resultMessageSequence.getMessage());
+			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return RETURN_VALUE_INVALID;
 			
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);	
@@ -237,6 +261,18 @@ public class AtmStub {
 			if(resultMessageSequence.getCounter() != messageCounter || withdrawResult.equals(ResponseMessage.ACCOUNT_DOESNT_EXIST) 
 					|| withdrawResult.equals(ResponseMessage.NEGATIVE_BALANCE)) 
 				return RETURN_VALUE_INVALID;
+			messageCounter++;	
+			
+			//Client receives and confirms HMAC of operation result
+			byte[] hmacMessageEncrypted = (byte[]) inFromServer.readObject();
+			hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
+			if(hmacMessageSequence.getCounter() != messageCounter) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			hmacBytes = EncryptionUtils.createHmac(secretKey, resultMessageSequence.getMessage());
+			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return RETURN_VALUE_INVALID;
+			
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
 		} catch(Exception e) {
@@ -283,12 +319,34 @@ public class AtmStub {
 				return RETURN_VALUE_INVALID;
 			messageCounter++;
 			
+			//Client receives and confirms HMAC of operation result
+			byte[] hmacMessageEncrypted = (byte[]) inFromServer.readObject();
+			MessageSequence hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
+			if(hmacMessageSequence.getCounter() != messageCounter) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			byte[] hmacBytes = EncryptionUtils.createHmac(secretKey, resultMessageSequence.getMessage());
+			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return RETURN_VALUE_INVALID;
+			
 			//If operation is a success, client receives balance from bank
 			byte[] balanceEncrypted = (byte[]) inFromServer.readObject();
 			MessageSequence balanceMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(balanceEncrypted, secretKey);
 			if(balanceMessageSequence.getCounter() != messageCounter) 
 				return RETURN_VALUE_INVALID;
 			balance = (String) Utils.deserializeData(balanceMessageSequence.getMessage());
+			messageCounter++;	
+			
+			//Client receives and confirms HMAC of operation result
+			hmacMessageEncrypted = (byte[]) inFromServer.readObject();
+			hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
+			if (hmacMessageSequence.getCounter() != messageCounter) 
+				return RETURN_VALUE_INVALID;
+			messageCounter++;
+			
+			hmacBytes = EncryptionUtils.createHmac(secretKey, balanceMessageSequence.getMessage());
+			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return RETURN_VALUE_INVALID;
+			
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
 		} catch(Exception e) {

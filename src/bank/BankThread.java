@@ -107,6 +107,14 @@ public class BankThread extends Thread {
 						byte[] encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(operationResultMessage), secretKey);
 						out.writeObject(encryptedBytes);
 						messageCounter++;
+						
+						// Create HMAC of result of the operation and send it to client
+			            hmacBytes = EncryptionUtils.createHmac(secretKey, operationResultMessage.getMessage());
+			            hmacMessageSequence = new MessageSequence(hmacBytes, messageCounter);
+			            encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(hmacMessageSequence), secretKey);
+						out.writeObject(encryptedBytes);
+						messageCounter++;
+						
 						break;
 					case DEPOSIT:
 						byte[] accountNameMsgBytes = (byte[]) in.readObject();
@@ -146,6 +154,13 @@ public class BankThread extends Thread {
 						}
 						
 						encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(operationResultMessage), secretKey);
+						out.writeObject(encryptedBytes);
+						messageCounter++;
+						
+						// Create HMAC of result of the operation and send it to client
+			            hmacBytes = EncryptionUtils.createHmac(secretKey, operationResultMessage.getMessage());
+			            hmacMessageSequence = new MessageSequence(hmacBytes, messageCounter);
+			            encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(hmacMessageSequence), secretKey);
 						out.writeObject(encryptedBytes);
 						messageCounter++;
 						break;
@@ -195,6 +210,13 @@ public class BankThread extends Thread {
 						encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(operationResultMessage), secretKey);
 						out.writeObject(encryptedBytes);
 						messageCounter++;
+						
+						// Create HMAC of result of the operation and send it to client
+			            hmacBytes = EncryptionUtils.createHmac(secretKey, operationResultMessage.getMessage());
+			            hmacMessageSequence = new MessageSequence(hmacBytes, messageCounter);
+			            encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(hmacMessageSequence), secretKey);
+						out.writeObject(encryptedBytes);
+						messageCounter++;
 						break;
 					case GET_BALANCE:
 						accountNameMsgBytes = (byte[]) in.readObject();
@@ -224,11 +246,25 @@ public class BankThread extends Thread {
 						out.writeObject(encryptedBytes);
 						messageCounter++;
 						
+						// Create HMAC of result of the operation and send it to client
+			            hmacBytes = EncryptionUtils.createHmac(secretKey, operationResultMessage.getMessage());
+			            hmacMessageSequence = new MessageSequence(hmacBytes, messageCounter);
+			            encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(hmacMessageSequence), secretKey);
+						out.writeObject(encryptedBytes);
+						messageCounter++;
+						
 						// if account exists, bank sends balance encrypted to client
 						if (currentBalance != ACCOUNT_DOESNT_EXIST) {
 							String balanceString = String.format(Locale.ROOT, "%.2f", currentBalance);
 							MessageSequence balanceMessage = new MessageSequence(Utils.serializeData(balanceString), messageCounter);
 							encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(balanceMessage), secretKey);
+							out.writeObject(encryptedBytes);
+							messageCounter++;
+							
+							// Create HMAC of balance and send it to client
+				            hmacBytes = EncryptionUtils.createHmac(secretKey, balanceMessage.getMessage());
+				            hmacMessageSequence = new MessageSequence(hmacBytes, messageCounter);
+				            encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(hmacMessageSequence), secretKey);
 							out.writeObject(encryptedBytes);
 							messageCounter++;
 						}

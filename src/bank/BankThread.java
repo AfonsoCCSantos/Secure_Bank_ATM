@@ -37,7 +37,7 @@ public class BankThread extends Thread {
 	private PublicKey publicKey;
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
-	private int messageCounter;
+	private long messageCounter;
 	
 
 	public BankThread(Socket socket, Map<String, BankAccount> accounts, PrivateKey privateKey, PublicKey publicKey) {
@@ -58,14 +58,13 @@ public class BankThread extends Thread {
 			in = Utils.gInputStream(socket);
 			out = Utils.gOutputStream(socket);
 			BankSkel bankSkel = new BankSkel(in, out, accounts);
-			messageCounter = 0;
 			while (true) {
 				byte[] commandInBytes = (byte[]) in.readObject();
 				MessageSequence commandMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(commandInBytes, privateKey);
-				if (commandMessage.getCounter() != messageCounter) return;
+				messageCounter = commandMessage.getCounter();
 				messageCounter++;
 				RequestType command = (RequestType) Utils.deserializeData(commandMessage.getMessage());
-
+				
 				switch (command) {
 					case CREATE_ACCOUNT:
 						//Get public key from client

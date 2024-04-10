@@ -14,6 +14,8 @@ import utils.RequestMessage;
 import utils.RequestType;
 import utils.ResponseMessage;
 import utils.Utils;
+
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,7 +40,7 @@ public class AtmStub {
 	private ObjectOutputStream outToServer;
 	private PrivateKey privateKey;
 	private PublicKey bankPublicKey;
-	private int messageCounter;
+	private long messageCounter;
 	
 	public AtmStub(Socket bankSocket, PublicKey bankPublicKey) {
 		this.outToServer = Utils.gOutputStream(bankSocket);
@@ -48,7 +50,11 @@ public class AtmStub {
 	
 	public int createAccount(RequestMessage requestMessage, String account) {
 		//verify if card file is unique
-		messageCounter = 0;
+		byte[] nonce = EncryptionUtils.generateNonce(8);
+		ByteBuffer bb = ByteBuffer.allocate(nonce.length);
+		bb.put(nonce);
+		bb.flip();
+		messageCounter = bb.getLong();
 		Path path = Paths.get(requestMessage.getCardFile());
 		if (Files.exists(path)) {
 			return RETURN_VALUE_INVALID;

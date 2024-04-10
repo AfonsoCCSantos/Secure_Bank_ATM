@@ -63,9 +63,22 @@ public class EncryptionUtils {
         byte[] nonce = new byte[length];
         SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(nonce);
+
+        // Ensure that the nonce is of the specified length
+        while (nonce.length < length) {
+            byte[] temp = new byte[length - nonce.length];
+            secureRandom.nextBytes(temp);
+            nonce = concatArrays(nonce, temp);
+        }
         return nonce;
     }
 	
+	 private static byte[] concatArrays(byte[] a, byte[] b) {
+	    byte[] result = new byte[a.length + b.length];
+	    System.arraycopy(a, 0, result, 0, a.length);
+	    System.arraycopy(b, 0, result, a.length, b.length);
+	    return result;
+	 }
     
 	public static byte[] aesEncrypt(byte[] data, SecretKey key) {
 		byte[] encryptedBytes = null;

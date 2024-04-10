@@ -6,9 +6,9 @@ public class MessageSequence implements Serializable {
 	
 	private static final long serialVersionUID = 1L;
 	private byte[] message;
-	private int counter;
+	private long counter;
 	
-	public MessageSequence(byte[] message, int counter) {
+	public MessageSequence(byte[] message, long counter) {
 		super();
 		this.message = message;
 		this.counter = counter;
@@ -22,11 +22,11 @@ public class MessageSequence implements Serializable {
 		this.message = message;
 	}
 
-	public int getCounter() {
+	public long getCounter() {
 		return counter;
 	}
 
-	public void setCounter(int counter) {
+	public void setCounter(long counter) {
 		this.counter = counter;
 	}
 }

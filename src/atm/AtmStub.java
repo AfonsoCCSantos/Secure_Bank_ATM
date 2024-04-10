@@ -119,8 +119,6 @@ public class AtmStub {
 				return RETURN_VALUE_INVALID;
 			messageCounter++;
 			
-			System.out.println("ola");
-			
 			hmacBytes = EncryptionUtils.createHmac(secretKey, resultMessageSequence.getMessage());
 			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return RETURN_VALUE_INVALID;
 			

@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 
 import utils.EncryptionUtils;
@@ -26,7 +25,6 @@ import java.io.IOException;
 
 public class BankThread extends Thread {
 	
-	private static final int SUCCESS = 0;
 	private static final int ACCOUNT_ALREADY_EXISTS = -2;
 	private static final int ACCOUNT_DOESNT_EXIST = -3;
 	private static final int NEGATIVE_BALANCE = -4;
@@ -38,7 +36,6 @@ public class BankThread extends Thread {
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
 	private long messageCounter;
-	
 
 	public BankThread(Socket socket, Map<String, BankAccount> accounts, PrivateKey privateKey, PublicKey publicKey) {
 		super();
@@ -51,10 +48,6 @@ public class BankThread extends Thread {
 	public void run() {
 		try {
 			socket.setSoTimeout(10000);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		try {
 			in = Utils.gInputStream(socket);
 			out = Utils.gOutputStream(socket);
 			BankSkel bankSkel = new BankSkel(in, out, accounts);

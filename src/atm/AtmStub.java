@@ -27,7 +27,6 @@ import java.security.KeyPair;
 import java.util.Arrays;
 import java.util.Locale;
 
-import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 
 public class AtmStub {
@@ -143,7 +142,11 @@ public class AtmStub {
 			return RETURN_VALUE_INVALID;
 		} 
 		
-		messageCounter = 0;
+		byte[] nonce = EncryptionUtils.generateNonce(8);
+		ByteBuffer bb = ByteBuffer.allocate(nonce.length);
+		bb.put(nonce);
+		bb.flip();
+		messageCounter = bb.getLong();
 		try {
 			Path path = Paths.get(requestMessage.getCardFile());
 			if (!Files.exists(path)) {
@@ -217,7 +220,12 @@ public class AtmStub {
 		if (requestMessage.getValue() <= 0) {
 			return RETURN_VALUE_INVALID;
 		}
-		messageCounter = 0;
+		
+		byte[] nonce = EncryptionUtils.generateNonce(8);
+		ByteBuffer bb = ByteBuffer.allocate(nonce.length);
+		bb.put(nonce);
+		bb.flip();
+		messageCounter = bb.getLong();
 
 		try {
 			KeyPair keyPair = loadCardFile(requestMessage.getCardFile());
@@ -288,7 +296,11 @@ public class AtmStub {
 
 	public int getBalance(RequestMessage requestMessage) {
 		String balance = null;
-		messageCounter = 0;
+		byte[] nonce = EncryptionUtils.generateNonce(8);
+		ByteBuffer bb = ByteBuffer.allocate(nonce.length);
+		bb.put(nonce);
+		bb.flip();
+		messageCounter = bb.getLong();
 		try {
 			KeyPair keyPair = loadCardFile(requestMessage.getCardFile());
 			if (keyPair == null) return RETURN_VALUE_INVALID;

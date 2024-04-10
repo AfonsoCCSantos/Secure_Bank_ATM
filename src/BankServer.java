@@ -62,7 +62,6 @@ public class BankServer {
 			privateKey = kp.getPrivate();
 			publicKey = kp.getPublic();
 			createAuthFile(finalArgs.get("AuthFile"), kp.getPublic());
-			Utils.printAndFlush("Auth file created");
 		} catch (NoSuchAlgorithmException e) {
 			System.exit(RETURN_VALUE_INVALID);
 		}

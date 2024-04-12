@@ -1,6 +1,7 @@
 package utils;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 public class RequestMessage implements Serializable {
 
@@ -9,9 +10,10 @@ public class RequestMessage implements Serializable {
 	private RequestType requestType;
 	private String account;
 	private String cardFile;
-	private double value;
+//	private double value;
+	private BigDecimal value;
 	
-	public RequestMessage(RequestType requestType, String account, String cardFile, double value) {
+	public RequestMessage(RequestType requestType, String account, String cardFile, BigDecimal value) {
 		super();
 		this.requestType = requestType;
 		this.account = account;
@@ -43,11 +45,11 @@ public class RequestMessage implements Serializable {
 		this.cardFile = cardFile;
 	}
 
-	public double getValue() {
+	public BigDecimal getValue() {
 		return value;
 	}
 
-	public void setValue(double value) {
+	public void setValue(BigDecimal value) {
 		this.value = value;
 	}
 

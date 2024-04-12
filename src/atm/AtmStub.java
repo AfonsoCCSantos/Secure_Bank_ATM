@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
 
 import utils.EncryptionUtils;
 import utils.MessageSequence;
@@ -33,7 +34,8 @@ public class AtmStub {
 	
 	private static final int RETURN_VALUE_INVALID = 255; 
 	private static final int RETURN_CONNECTION_ERROR = 63;  
-	private static final double BALANCE_INFERIOR_LIMIT = 10.0; 
+//	private static final double BALANCE_INFERIOR_LIMIT = 10.0; 
+	private static final BigDecimal BALANCE_INFERIOR_LIMIT = BigDecimal.TEN; 
 	
 	private ObjectInputStream inFromServer;
 	private ObjectOutputStream outToServer;
@@ -73,7 +75,7 @@ public class AtmStub {
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
-		if (requestMessage.getValue() < BALANCE_INFERIOR_LIMIT) {
+		if (requestMessage.getValue().compareTo(BALANCE_INFERIOR_LIMIT) == -1) {
 			Utils.deleteFile(requestMessage.getCardFile());
 			return RETURN_VALUE_INVALID;
 		} 
@@ -154,7 +156,7 @@ public class AtmStub {
 	}
 
 	public int depositAmount(RequestMessage requestMessage) {
-		if (requestMessage.getValue() <= 0) {
+		if (requestMessage.getValue().compareTo(BigDecimal.ZERO) == -1) {
 			return RETURN_VALUE_INVALID;
 		} 
 		
@@ -233,9 +235,9 @@ public class AtmStub {
 	}
 
 	public int withdrawAmount(RequestMessage requestMessage) {
-		if (requestMessage.getValue() <= 0) {
+		if (requestMessage.getValue().compareTo(BigDecimal.ZERO) == -1) {
 			return RETURN_VALUE_INVALID;
-		}
+		} 
 		
 		byte[] nonce = EncryptionUtils.generateNonce(8);
 		ByteBuffer bb = ByteBuffer.allocate(nonce.length);

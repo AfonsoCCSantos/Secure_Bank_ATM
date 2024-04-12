@@ -2,6 +2,7 @@ package bank;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.security.KeyPairGenerator;
@@ -139,7 +140,7 @@ public class BankThread extends Thread {
 						hmacBytes = EncryptionUtils.createHmac(secretKey, valueMessageSequence.getMessage());
             			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return;
             			
-						returnCode = bankSkel.deposit(accountName, (double) Utils.deserializeData(valueMessageSequence.getMessage()));
+						returnCode = bankSkel.deposit(accountName, (BigDecimal) Utils.deserializeData(valueMessageSequence.getMessage()));
 						operationResultMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
 						if (returnCode == ACCOUNT_DOESNT_EXIST) {
 							operationResultMessage.setMessage(Utils.serializeData(ResponseMessage.ACCOUNT_DOESNT_EXIST));
@@ -191,7 +192,7 @@ public class BankThread extends Thread {
             			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return;
 				        
 				        //Bank sends result of operation to client
-						returnCode = bankSkel.withdraw(accountName, (double) Utils.deserializeData(valueMessageSequence.getMessage()));
+						returnCode = bankSkel.withdraw(accountName, (BigDecimal) Utils.deserializeData(valueMessageSequence.getMessage()));
 						operationResultMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
 						if (returnCode == ACCOUNT_DOESNT_EXIST) {
 							operationResultMessage.setMessage(Utils.serializeData(ResponseMessage.ACCOUNT_DOESNT_EXIST));
@@ -229,9 +230,9 @@ public class BankThread extends Thread {
 				        //From this moment the secretShared key is established
 						
 						//Bank sends result of operation to client
-						double currentBalance = bankSkel.getBalance(accountName);
+						BigDecimal currentBalance = bankSkel.getBalance(accountName);
 						operationResultMessage = new MessageSequence(Utils.serializeData(ResponseMessage.SUCCESS), messageCounter);
-						if (currentBalance == ACCOUNT_DOESNT_EXIST) {
+						if (currentBalance == null) { //If account doesnt exist
 							operationResultMessage.setMessage(Utils.serializeData(ResponseMessage.ACCOUNT_DOESNT_EXIST));
 						}
 						encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(operationResultMessage), secretKey);
@@ -246,7 +247,7 @@ public class BankThread extends Thread {
 						messageCounter++;
 						
 						// if account exists, bank sends balance encrypted to client
-						if (currentBalance != ACCOUNT_DOESNT_EXIST) {
+						if (currentBalance != null) {
 							String balanceString = String.format(Locale.ROOT, "%.2f", currentBalance);
 							MessageSequence balanceMessage = new MessageSequence(Utils.serializeData(balanceString), messageCounter);
 							encryptedBytes = EncryptionUtils.aesEncrypt(Utils.serializeData(balanceMessage), secretKey);

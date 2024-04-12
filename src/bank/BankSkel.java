@@ -2,6 +2,7 @@ package bank;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
 import java.security.PublicKey;
 import java.util.Locale;
 import java.util.Map;
@@ -21,7 +22,7 @@ public class BankSkel {
 		this.accounts = accounts;
 	}
 	
-	public int createAccount(String accountName, double balance, PublicKey clientPublicKey) {
+	public int createAccount(String accountName, BigDecimal balance, PublicKey clientPublicKey) {
 		if (accounts.get(accountName) != null) return -2;
 		
 		BankAccount bankAccount = new BankAccount(balance, clientPublicKey);
@@ -32,7 +33,7 @@ public class BankSkel {
 		return 0;
 	}
 
-	public int deposit(String accountName, double amount) {
+	public int deposit(String accountName, BigDecimal amount) {
 		if (accounts.get(accountName) == null) return -3;
 		
 		synchronized (accounts) {
@@ -44,7 +45,7 @@ public class BankSkel {
 		return 0;
 	}
 
-	public int withdraw(String accountName, double amount) {
+	public int withdraw(String accountName, BigDecimal amount) {
 		if (accounts.get(accountName) == null) return -3;
 		
 		synchronized (accounts) {
@@ -57,9 +58,9 @@ public class BankSkel {
 		return 0;
 	}
 	
-	public double getBalance(String accountName) {
-		if (accounts.get(accountName) == null) return -3;
-		double amount = 0;
+	public BigDecimal getBalance(String accountName) {
+		if (accounts.get(accountName) == null) return null;
+		BigDecimal amount = BigDecimal.ONE;
 		
 		synchronized (accounts) {
 			amount = accounts.get(accountName).getAccountValue();

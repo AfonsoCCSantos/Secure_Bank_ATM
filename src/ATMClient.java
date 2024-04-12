@@ -12,6 +12,7 @@ import utils.Utils;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.math.BigDecimal;
 
 public class ATMClient {
 	
@@ -81,27 +82,31 @@ public class ATMClient {
 		Socket bankSocket = connectToServerSocket(finalArgs.get("BankIP"), bankPort);
 		AtmStub atmStub = new AtmStub(bankSocket, bankPublicKey);
 		
-		double amount = 0.00;
+		BigDecimal amount = BigDecimal.ZERO;
+//		double amount = 0.00;
 		int result = 0;
 		RequestMessage request = null;
 		switch(finalArgs.get("Functionality")) {
 				case "CREATE_ACCOUNT":
-					amount = getAmountInDouble(finalArgs);
+//					amount = getAmountInDouble(finalArgs);
+					amount = getAmountInDecimal(finalArgs);
 					request = new RequestMessage(RequestType.CREATE_ACCOUNT, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
 					result = atmStub.createAccount(request, finalArgs.get("Account"));
 					break;
 				case "DEPOSIT":
-					amount = getAmountInDouble(finalArgs);
+//					amount = getAmountInDouble(finalArgs);
+					amount = getAmountInDecimal(finalArgs);
 					request = new RequestMessage(RequestType.DEPOSIT, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
 					result = atmStub.depositAmount(request);
 					break;
 				case "WITHDRAW":
-					amount = getAmountInDouble(finalArgs);
+//					amount = getAmountInDouble(finalArgs);
+					amount = getAmountInDecimal(finalArgs);
 					request = new RequestMessage(RequestType.WITHDRAW, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
 					result = atmStub.withdrawAmount(request);
 					break;
 				case "GET_BALANCE":
-					request = new RequestMessage(RequestType.GET_BALANCE, finalArgs.get("Account"), finalArgs.get("CardFile"), -1);
+					request = new RequestMessage(RequestType.GET_BALANCE, finalArgs.get("Account"), finalArgs.get("CardFile"), null);
 					result = atmStub.getBalance(request);
 					break;
 		}
@@ -113,10 +118,20 @@ public class ATMClient {
 		System.exit(result);
 	}
 
-	private static double getAmountInDouble(Map<String, String> finalArgs) {
-		double amount = 0.0;
+//	private static double getAmountInDouble(Map<String, String> finalArgs) {
+//		double amount = 0.0;
+//		try {
+//			amount = Double.parseDouble(finalArgs.get("Amount"));
+//		} catch (NumberFormatException e) {
+//			System.exit(RETURN_VALUE_INVALID);
+//		}
+//		return amount;
+//	}
+	
+	private static BigDecimal getAmountInDecimal(Map<String, String> finalArgs) {
+		BigDecimal amount = BigDecimal.ZERO;
 		try {
-			amount = Double.parseDouble(finalArgs.get("Amount"));
+			amount = BigDecimal.valueOf(Double.parseDouble(finalArgs.get("Amount")));
 		} catch (NumberFormatException e) {
 			System.exit(RETURN_VALUE_INVALID);
 		}

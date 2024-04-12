@@ -1,22 +1,23 @@
 package bank;
 
+import java.math.BigDecimal;
 import java.security.PublicKey;
 
 public class BankAccount {
 	
-	private double accountValue;
+	private BigDecimal accountValue;
 	private PublicKey publicKey;
 	
-	public BankAccount(double accountValue, PublicKey publicKey) {
+	public BankAccount(BigDecimal accountValue, PublicKey publicKey) {
 		this.accountValue = accountValue;
 		this.publicKey = publicKey;
 	}
 	
-	public double getAccountValue() {
+	public BigDecimal getAccountValue() {
 		return accountValue;
 	}
 
-	public void setAccountValue(double accountValue) {
+	public void setAccountValue(BigDecimal accountValue) {
 		this.accountValue = accountValue;
 	}
 
@@ -28,16 +29,19 @@ public class BankAccount {
 		this.publicKey = publicKey;
 	}
 
-	public void deposit(double amount) {
-		this.accountValue += amount;
+	public void deposit(BigDecimal amount) {
+		this.accountValue.add(amount);
 	}
 	
-	public int withdraw(double amount) {
-		if (this.accountValue - amount < 0) {
+	public int withdraw(BigDecimal amount) {
+		BigDecimal newValue = this.accountValue.subtract(amount); 
+		
+		
+		if (newValue.compareTo(BigDecimal.ONE) == -1) {
 			return -1;
 		}
 		else {
-			this.accountValue -= amount;
+			this.accountValue = newValue;
 			return 0;
 		}
 	}

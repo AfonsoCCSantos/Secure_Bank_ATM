@@ -30,14 +30,12 @@ public class BankAccount {
 	}
 
 	public void deposit(BigDecimal amount) {
-		this.accountValue.add(amount);
+		this.accountValue = this.accountValue.add(amount);
 	}
 	
 	public int withdraw(BigDecimal amount) {
 		BigDecimal newValue = this.accountValue.subtract(amount); 
-		
-		
-		if (newValue.compareTo(BigDecimal.ONE) == -1) {
+		if (newValue.compareTo(BigDecimal.ZERO) == -1) {
 			return -1;
 		}
 		else {

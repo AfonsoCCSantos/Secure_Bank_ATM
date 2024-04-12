@@ -43,7 +43,6 @@ public class ATMClient {
 		if (finalArgs.get("AuthFile") != null && !Utils.verifyFileNames(finalArgs.get("AuthFile"))) 
 			System.exit(RETURN_VALUE_INVALID);
 		
-		
 		if (finalArgs.get("CardFile") != null && !Utils.verifyFileNames(finalArgs.get("CardFile"))) 
 			System.exit(RETURN_VALUE_INVALID);	
 		

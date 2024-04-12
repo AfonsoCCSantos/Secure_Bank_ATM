@@ -83,14 +83,11 @@ public class BankServer {
 
 	private static void addSigtermHook(ServerSocket serverSocket) {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Received SIGTERM, shutting down...");
-            System.out.flush();
             try {
 				serverSocket.close();
 			} catch (IOException e) {
 				System.exit(0);
 			}
-            // Perform cleanup tasks or any necessary actions before exiting
             System.exit(0);
         }));
 	}

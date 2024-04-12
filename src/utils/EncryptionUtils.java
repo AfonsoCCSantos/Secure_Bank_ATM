@@ -29,7 +29,7 @@ public class EncryptionUtils {
 			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 			encryptedBytes = cipher.doFinal(data);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return encryptedBytes;
 	}
@@ -41,7 +41,7 @@ public class EncryptionUtils {
 			d.init(Cipher.DECRYPT_MODE, privateKey);
 			decryptedBytes = d.doFinal(encryptedData);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return decryptedBytes;
 	}
@@ -54,7 +54,7 @@ public class EncryptionUtils {
 			byte[] decryptedBytes = d.doFinal(encryptedData);
 			result = (Object) Utils.deserializeData(decryptedBytes);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return result;
 	}
@@ -87,7 +87,7 @@ public class EncryptionUtils {
 			cipher.init(Cipher.ENCRYPT_MODE, key);
 			encryptedBytes = cipher.doFinal(data);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return encryptedBytes;
 	}
@@ -99,7 +99,7 @@ public class EncryptionUtils {
 			cipher.init(Cipher.DECRYPT_MODE, key);
 			decryptedBytes = cipher.doFinal(data);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return decryptedBytes;
 	}
@@ -110,7 +110,7 @@ public class EncryptionUtils {
 			byte[] decryptedBytes = aesDecrypt(encryptedData,key);
 			result = (Object) Utils.deserializeData(decryptedBytes);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return result;
 	}
@@ -128,7 +128,7 @@ public class EncryptionUtils {
 	        secretKey = new SecretKeySpec(sharedSecret, 0, 16, "AES");
 			
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return secretKey;
 	}
@@ -141,7 +141,7 @@ public class EncryptionUtils {
 			byte[] hmacBytes = hmacSha256.doFinal(message);
 			return hmacBytes;
 		} catch (NoSuchAlgorithmException | InvalidKeyException e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return null;
 	}
@@ -151,7 +151,7 @@ public class EncryptionUtils {
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			return digest.digest(message);
 		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return null;
 	}
@@ -164,7 +164,7 @@ public class EncryptionUtils {
 	        signature.update(hash);
 	        return signature.sign();
 		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return null;
     }
@@ -177,7 +177,7 @@ public class EncryptionUtils {
 	        verifier.update(hash);
 	        return verifier.verify(signature);
 		} catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return false;
         

@@ -318,7 +318,6 @@ public class BankThread extends Thread {
 			
 			return true;
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
 			return false;
 		}
 	}
@@ -361,8 +360,7 @@ public class BankThread extends Thread {
 			SecretKey secretKey = EncryptionUtils.calculateSecretSharedKey(serverKeyPair.getPrivate(), clientDHPublicKey);
 			return secretKey;
 		} catch (IOException | ClassNotFoundException | NoSuchAlgorithmException e) {
-			e.printStackTrace();
+			return null;
 		}
-		return null;
 	}
 }

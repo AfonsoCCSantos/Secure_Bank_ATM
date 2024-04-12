@@ -24,6 +24,7 @@ public class BankServer {
 	
 	private static final String DEFAULT_BANK_PORT = "3000";
 	private static final int RETURN_VALUE_INVALID = 255;  
+	private static final int RETURN_CONNECTION_ERROR = 63;  
 	private static final String DEFAULT_AUTH_FILE = "bank.auth";
 	private static Map<String, BankAccount> accounts;
 	private static PrivateKey privateKey;
@@ -99,7 +100,7 @@ public class BankServer {
 		try {
 			serverSocket = new ServerSocket(portNumber);
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.exit(RETURN_CONNECTION_ERROR);
 		}
 		return serverSocket;
 	}

@@ -501,7 +501,7 @@ public class AtmStub {
 		} catch(SocketTimeoutException e) {
 			System.exit(RETURN_CONNECTION_ERROR);
 	    } catch (Exception e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return secretKey;
 	}

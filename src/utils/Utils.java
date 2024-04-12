@@ -140,7 +140,7 @@ public class Utils {
             objectOutputStream.close();
             result = byteArrayOutputStream.toByteArray();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return result;
 	}
@@ -151,7 +151,7 @@ public class Utils {
 				ObjectInputStream ois = new ObjectInputStream(bis)) {
 			result = ois.readObject();
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+			System.exit(RETURN_VALUE_INVALID);
 		}
 		return result;
 	}

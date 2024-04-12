@@ -129,7 +129,6 @@ public class ATMClient {
 			socket = new Socket(bankIP, bankPort);
 			socket.setSoTimeout(10000);
 		} catch (IOException e) {
-			e.printStackTrace();
 			System.exit(RETURN_CONNECTION_ERROR);
 		}
 		return socket;
@@ -279,10 +278,6 @@ public class ATMClient {
 				}
 				finalArgs.put("Functionality", "GET_BALANCE");
 			}
-//			System.out.println(finalArgs.get("Account"));
-//			System.out.println(finalArgs.get("Functionality"));
-//			System.out.println(finalArgs.get("Amount"));
-//			System.out.println();
 			
 			i++; 
 		}

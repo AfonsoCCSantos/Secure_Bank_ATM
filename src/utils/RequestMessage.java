@@ -10,7 +10,6 @@ public class RequestMessage implements Serializable {
 	private RequestType requestType;
 	private String account;
 	private String cardFile;
-//	private double value;
 	private BigDecimal value;
 	
 	public RequestMessage(RequestType requestType, String account, String cardFile, BigDecimal value) {

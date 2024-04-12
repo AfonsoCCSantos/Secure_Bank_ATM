@@ -66,7 +66,6 @@ public class ATMClient {
 			finalArgs.put("CardFile", finalArgs.get("Account") + ".card");
 		}
 		
-		
 		if (!Utils.verifyIPAddress(finalArgs.get("BankIP"))) 
 			System.exit(RETURN_VALUE_INVALID);
 		
@@ -83,24 +82,20 @@ public class ATMClient {
 		AtmStub atmStub = new AtmStub(bankSocket, bankPublicKey);
 		
 		BigDecimal amount = BigDecimal.ZERO;
-//		double amount = 0.00;
 		int result = 0;
 		RequestMessage request = null;
 		switch(finalArgs.get("Functionality")) {
 				case "CREATE_ACCOUNT":
-//					amount = getAmountInDouble(finalArgs);
 					amount = getAmountInDecimal(finalArgs);
 					request = new RequestMessage(RequestType.CREATE_ACCOUNT, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
 					result = atmStub.createAccount(request, finalArgs.get("Account"));
 					break;
 				case "DEPOSIT":
-//					amount = getAmountInDouble(finalArgs);
 					amount = getAmountInDecimal(finalArgs);
 					request = new RequestMessage(RequestType.DEPOSIT, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
 					result = atmStub.depositAmount(request);
 					break;
 				case "WITHDRAW":
-//					amount = getAmountInDouble(finalArgs);
 					amount = getAmountInDecimal(finalArgs);
 					request = new RequestMessage(RequestType.WITHDRAW, finalArgs.get("Account"), finalArgs.get("CardFile"), amount);
 					result = atmStub.withdrawAmount(request);
@@ -117,16 +112,6 @@ public class ATMClient {
 		}
 		System.exit(result);
 	}
-
-//	private static double getAmountInDouble(Map<String, String> finalArgs) {
-//		double amount = 0.0;
-//		try {
-//			amount = Double.parseDouble(finalArgs.get("Amount"));
-//		} catch (NumberFormatException e) {
-//			System.exit(RETURN_VALUE_INVALID);
-//		}
-//		return amount;
-//	}
 	
 	private static BigDecimal getAmountInDecimal(Map<String, String> finalArgs) {
 		BigDecimal amount = BigDecimal.ZERO;

@@ -28,12 +28,10 @@ public class BankServer {
 	private static final String DEFAULT_AUTH_FILE = "bank.auth";
 	private static Map<String, BankAccount> accounts;
 	private static PrivateKey privateKey;
-	private static PublicKey publicKey;
 	
 	public static void main(String[] args) {
 		Locale.setDefault(new Locale("en", "US"));
 		ServerSocket serverSocket = null;
-		addSigtermHook(serverSocket);
 		accounts = new HashMap<String, BankAccount>();
 		Scanner sc = new Scanner(System.in);
 		Map<String, String> finalArgs = new HashMap<String, String>();
@@ -61,19 +59,19 @@ public class BankServer {
 			kpg.initialize(2048);
 			KeyPair kp = kpg.generateKeyPair();
 			privateKey = kp.getPrivate();
-			publicKey = kp.getPublic();
 			createAuthFile(finalArgs.get("AuthFile"), kp.getPublic());
 		} catch (NoSuchAlgorithmException e) {
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
 		serverSocket = initialiseSocket(Integer.parseInt(finalArgs.get("port")));
+		addSigtermHook(serverSocket);
 		
 		while (true) {
 			Socket inSocket;
 			try {
 				inSocket = serverSocket.accept();
-				BankThread newServerThread = new BankThread(inSocket, accounts, privateKey, publicKey);
+				BankThread newServerThread = new BankThread(inSocket, accounts, privateKey);
 				newServerThread.start();
 			} catch (IOException e) {
 				System.exit(RETURN_VALUE_INVALID);

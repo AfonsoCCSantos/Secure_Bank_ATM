@@ -29,21 +29,18 @@ public class BankThread extends Thread {
 	private static final int ACCOUNT_ALREADY_EXISTS = -2;
 	private static final int ACCOUNT_DOESNT_EXIST = -3;
 	private static final int NEGATIVE_BALANCE = -4;
-	private static final int RETURN_CONNECTION_ERROR = 63;  
 	private Socket socket;
 	private Map<String, BankAccount> accounts;
 	private PrivateKey privateKey;
-	private PublicKey publicKey;
 	private ObjectInputStream in;
 	private ObjectOutputStream out;
 	private long messageCounter;
 
-	public BankThread(Socket socket, Map<String, BankAccount> accounts, PrivateKey privateKey, PublicKey publicKey) {
+	public BankThread(Socket socket, Map<String, BankAccount> accounts, PrivateKey privateKey) {
 		super();
 		this.socket = socket;
 		this.accounts = accounts;
 		this.privateKey = privateKey;
-		this.publicKey = publicKey;
 	}
 	
 	public void run() {
@@ -266,7 +263,7 @@ public class BankThread extends Thread {
 			}
 		} catch (SocketTimeoutException e) {
 			Utils.printAndFlush("protocol_error\n");
-			System.exit(RETURN_CONNECTION_ERROR);
+			return;
 		} catch (Exception e) {
 			return;
 		} 

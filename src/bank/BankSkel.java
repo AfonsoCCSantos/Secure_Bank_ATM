@@ -1,7 +1,5 @@
 package bank;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.security.PublicKey;
 import java.util.Locale;
@@ -11,14 +9,10 @@ import utils.Utils;
 
 public class BankSkel {
 	
-	private ObjectInputStream in;
-	private ObjectOutputStream out;
 	private Map<String, BankAccount> accounts;
 	
-	public BankSkel(ObjectInputStream in, ObjectOutputStream out, Map<String, BankAccount> accounts) {
+	public BankSkel(Map<String, BankAccount> accounts) {
 		super();
-		this.in = in;
-		this.out = out;
 		this.accounts = accounts;
 	}
 	
@@ -68,17 +62,4 @@ public class BankSkel {
 		Utils.printAndFlush("{\"account\":\"" + accountName + "\",\"balance\":" + String.format(Locale.ROOT, "%.2f", amount) + "}\n");
 		return amount;
 	}
-
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
 }

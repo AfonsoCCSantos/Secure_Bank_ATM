@@ -51,7 +51,7 @@ public class BankThread extends Thread {
 			socket.setSoTimeout(10000);
 			in = Utils.gInputStream(socket);
 			out = Utils.gOutputStream(socket);
-			BankSkel bankSkel = new BankSkel(in, out, accounts);
+			BankSkel bankSkel = new BankSkel(accounts);
 			while (true) {
 				byte[] commandInBytes = (byte[]) in.readObject();
 				MessageSequence commandMessage = (MessageSequence) EncryptionUtils.rsaDecryptAndDeserialize(commandInBytes, privateKey);

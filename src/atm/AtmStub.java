@@ -34,7 +34,6 @@ public class AtmStub {
 	
 	private static final int RETURN_VALUE_INVALID = 255; 
 	private static final int RETURN_CONNECTION_ERROR = 63;  
-//	private static final double BALANCE_INFERIOR_LIMIT = 10.0; 
 	private static final BigDecimal BALANCE_INFERIOR_LIMIT = BigDecimal.TEN; 
 	
 	private ObjectInputStream inFromServer;

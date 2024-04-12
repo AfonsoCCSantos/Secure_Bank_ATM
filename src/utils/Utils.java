@@ -2,6 +2,7 @@ package utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -36,7 +37,6 @@ public class Utils {
         } catch (Exception e) {
 			System.exit(RETURN_VALUE_INVALID);
 		}
-		
         return inStream;
     }
 	
@@ -156,6 +156,13 @@ public class Utils {
 		return result;
 	}
 	
-	
-	
+	public static int deleteFile(String fileName) {
+		File myObj = new File(fileName);
+		if (myObj.delete()) { 
+			return 0;
+		} 
+		else {
+			return -1;
+		} 
+	}
 }

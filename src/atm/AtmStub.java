@@ -69,10 +69,12 @@ public class AtmStub {
 			publicKey = kp.getPublic();
 			createCardFile(requestMessage.getCardFile(),kp);
 		} catch (NoSuchAlgorithmException e) {
+			Utils.deleteFile(requestMessage.getCardFile());
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
 		if (requestMessage.getValue() < BALANCE_INFERIOR_LIMIT) {
+			Utils.deleteFile(requestMessage.getCardFile());
 			return RETURN_VALUE_INVALID;
 		} 
 		
@@ -89,12 +91,18 @@ public class AtmStub {
 			outToServer.writeObject(messageToSend);
 			messageCounter++;
 			
-			if (!clientAuthenticationChallenge()) return RETURN_VALUE_INVALID;
+			if (!clientAuthenticationChallenge()) {
+				Utils.deleteFile(requestMessage.getCardFile());
+				return RETURN_VALUE_INVALID;
+			}
 			// Authentication completed
 			
 			//Here the client has a secret key to talk with the server
 	        SecretKey secretKey = clientDHExchange();
-	        if (secretKey == null) return RETURN_VALUE_INVALID;
+	        if (secretKey == null) {
+	        	Utils.deleteFile(requestMessage.getCardFile());
+	        	return RETURN_VALUE_INVALID;
+	        }
 			
 			//Client sends account and value encrypted to server
 			MessageSequence requestMessageSequence = new MessageSequence(Utils.serializeData(requestMessage), messageCounter);
@@ -113,23 +121,31 @@ public class AtmStub {
 			byte[] resultEncrypted = (byte[]) inFromServer.readObject();
 			MessageSequence resultMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(resultEncrypted, secretKey);
 			if(resultMessageSequence.getCounter() != messageCounter || 
-				Utils.deserializeData(resultMessageSequence.getMessage()).equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) 
+				Utils.deserializeData(resultMessageSequence.getMessage()).equals(ResponseMessage.ACCOUNT_ALREADY_EXISTS)) {
+				Utils.deleteFile(requestMessage.getCardFile());
 				return RETURN_VALUE_INVALID;
+			}
 			messageCounter++;	
 			
 			//Client receives and confirms HMAC of operation result
 			byte[] hmacMessageEncrypted = (byte[]) inFromServer.readObject();
 			hmacMessageSequence = (MessageSequence) EncryptionUtils.aesDecryptAndDeserialize(hmacMessageEncrypted, secretKey);
-			if(hmacMessageSequence.getCounter() != messageCounter) 
+			if(hmacMessageSequence.getCounter() != messageCounter) {
+				Utils.deleteFile(requestMessage.getCardFile());
 				return RETURN_VALUE_INVALID;
+			}
 			messageCounter++;
 			
 			hmacBytes = EncryptionUtils.createHmac(secretKey, resultMessageSequence.getMessage());
-			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) return RETURN_VALUE_INVALID;
-			
+			if(!Arrays.equals(hmacBytes, hmacMessageSequence.getMessage())) {
+				Utils.deleteFile(requestMessage.getCardFile());
+				return RETURN_VALUE_INVALID;
+			}
 		} catch(SocketTimeoutException e) {
+			Utils.deleteFile(requestMessage.getCardFile());
 			System.exit(RETURN_CONNECTION_ERROR);
 		} catch(Exception e) {
+			Utils.deleteFile(requestMessage.getCardFile());
 			System.exit(RETURN_VALUE_INVALID);
 		}
 		
@@ -380,7 +396,6 @@ public class AtmStub {
 		} catch (IOException e) {
 			System.exit(RETURN_VALUE_INVALID);
 		} 
-		Utils.printAndFlush("Card file created.\n");
 	}
 	
 	private static KeyPair loadCardFile(String cardFileName) {
